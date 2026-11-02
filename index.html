@@ -12,7 +12,7 @@ header{background:linear-gradient(120deg,#102a43,#1769aa);color:white;padding:26
 .wrap{max-width:1120px;margin:auto}.brand{display:flex;align-items:center;gap:14px}.crest{width:54px;height:54px;border:2px solid #ffffff99;border-radius:50%;display:grid;place-items:center;font-size:25px}
 h1{font-size:clamp(22px,4vw,32px);margin:0}header p{margin:5px 0 0;color:#d9e8f5}
 nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}nav a{color:white;text-decoration:none;padding:8px 12px;border:1px solid #ffffff55;border-radius:8px;font-size:14px}
-main{padding:24px 18px 48px}.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:20px}
+main{padding:24px 18px 48px}.site-layout{display:grid;grid-template-columns:205px minmax(0,1fr);gap:18px;align-items:start}.side-menu{position:sticky;top:14px;background:white;border:1px solid var(--line);border-radius:12px;padding:12px}.side-menu h2{font-size:15px;margin:3px 6px 12px}.side-menu button{display:block;width:100%;margin:5px 0;text-align:left;background:transparent;color:var(--navy);border:1px solid transparent;padding:11px;font-size:14px}.side-menu button.active{background:#e5f2fc;border-color:#a8cfe8;color:#07568a}.site-content{min-width:0}.view-section[hidden]{display:none!important}@media(max-width:760px){.site-layout{grid-template-columns:1fr}.side-menu{position:static;display:flex;flex-wrap:wrap;gap:5px}.side-menu h2{width:100%;margin-bottom:3px}.side-menu button{width:auto;flex:1 1 120px;text-align:center;margin:0}}.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:20px}
 .field{display:grid;gap:5px}label{font-size:13px;font-weight:bold;color:var(--muted)}select,input,button{font:inherit;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:white;color:var(--ink)}
 button{background:var(--blue);color:white;border:0;font-weight:bold;cursor:pointer}button:hover{filter:brightness(.94)}
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}.card{background:white;border:1px solid var(--line);border-radius:13px;padding:18px;box-shadow:0 3px 12px #102a4310}.wide{grid-column:span 8}.side{grid-column:span 4}.full{grid-column:1/-1}
@@ -29,16 +29,31 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
  <nav><a href="#fixture">Fixture</a><a href="#posiciones">Tablas de posiciones</a><a href="#goleadores">Goleadores</a><a href="#admin">Administración</a></nav>
 </div></header>
 <main class="wrap">
+ <div class="site-layout">
+ <aside class="side-menu" aria-label="Menú de consultas">
+ <h2>🔎 ¿Qué deseas ver?</h2>
+ <button type="button" data-view="fixture">📅 Fixture</button>
+ <button type="button" data-view="posiciones" class="active">🏆 Tabla de posiciones</button>
+ <button type="button" data-view="multas">📋 Multas</button>
+ <button type="button" data-view="castigos">🟥 Castigos</button>
+ <button type="button" data-view="goleadores">⚽ Goleadores</button>
+ <button type="button" data-view="admin">🔐 Administración</button>
+ </aside>
+ <div class="site-content">
  <div class="toolbar">
   <div class="field"><label for="season">TEMPORADA</label><select id="season"><option>2026</option><option>2027</option></select></div>
   <div class="field"><label for="round">FECHA</label><select id="round"></select></div><div class="field"><label for="category">CATEGORÍA · BUSCAR</label><select id="category"><option value="todas">Todas las tablas</option><option value="general">Tabla general</option><option>Dorados</option><option>Súper Senior</option><option>Senior</option><option>Tercera Infantil</option><option>Femenino</option><option>Segunda Infantil</option><option>Juvenil</option><option>Tercera Adulta</option><option>Segunda Adulta</option><option>Primera Adulta</option></select></div>
   <span class="pill">Clausura 2026</span>
  </div>
  <div class="grid">
-  <section class="card wide" id="fixture"><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div id="fixture-content" class="empty">Cargando fixture Clausura 2026…</div></section>
-  <section class="card full" id="admin"><h2>🔐 Administración</h2><div id="login-box"><p>Solo la tesorería puede modificar los resultados oficiales.</p><label for="admin-email">Correo administrador</label><input id="admin-email" type="email" autocomplete="username" value="tesoreria.nct@gmail.com" readonly style="width:100%"><label for="admin-password">Contraseña</label><input id="admin-password" type="password" autocomplete="current-password" style="width:100%"><button id="login-button" type="button">Ingresar</button></div><div id="admin-panel" hidden><p id="admin-user"></p><button id="verify-button" type="button" hidden>Enviar correo de verificación</button><button id="logout-button" type="button">Cerrar sesión</button><p>Selecciona la fecha. Aquí aparecen juntos el Grupo A y el Grupo B para ingresar los goles y las bonificaciones. Las casillas vacías quedan pendientes.</p><div id="editor"></div><button id="save-results" type="button">Guardar resultados oficiales</button></div><p id="save-status" class="muted" role="status"></p></section>
-  <section class="card full" id="posiciones"><h2>🏆 Tabla de posiciones</h2><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
-  <section class="card full" id="goleadores"><h2>⚽ Tabla de goleadores</h2><div class="empty">Los goleadores se publicarán cuando se habilite el registro de anotaciones por partido.</div></section>
+  <section class="card full view-section" id="fixture" hidden><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div id="fixture-content" class="empty">Cargando fixture Clausura 2026…</div></section>
+  <section class="card full view-section" id="admin" hidden><h2>🔐 Administración</h2><div id="login-box"><p>Solo la tesorería puede modificar los resultados oficiales.</p><label for="admin-email">Correo administrador</label><input id="admin-email" type="email" autocomplete="username" value="tesoreria.nct@gmail.com" readonly style="width:100%"><label for="admin-password">Contraseña</label><input id="admin-password" type="password" autocomplete="current-password" style="width:100%"><button id="login-button" type="button">Ingresar</button></div><div id="admin-panel" hidden><p id="admin-user"></p><button id="verify-button" type="button" hidden>Enviar correo de verificación</button><button id="logout-button" type="button">Cerrar sesión</button><p>Selecciona la fecha. Aquí aparecen juntos el Grupo A y el Grupo B para ingresar los goles y las bonificaciones. Las casillas vacías quedan pendientes.</p><div id="editor"></div><button id="save-results" type="button">Guardar resultados oficiales</button></div><p id="save-status" class="muted" role="status"></p></section>
+  <section class="card full view-section" id="posiciones"><h2>🏆 Tabla de posiciones</h2><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
+  <section class="card full view-section" id="goleadores" hidden><h2>⚽ Tabla de goleadores</h2><div class="empty">Los goleadores se publicarán cuando se habilite el registro de anotaciones por partido.</div></section>
+  <section class="card full view-section" id="multas" hidden><h2>📋 Multas</h2><p class="muted">Las multas oficiales todavía no han sido cargadas. Se publicarán aquí cuando la Asociación registre la información.</p></section>
+  <section class="card full view-section" id="castigos" hidden><h2>🟥 Castigos</h2><p class="muted">Los castigos oficiales todavía no han sido cargados. Se publicarán aquí cuando la Asociación registre la información.</p></section>
+ </div>
+ </div>
  </div>
 </main>
 <footer>© Asociación de Fútbol Local Nueva Calera de Tango</footer>
@@ -48,6 +63,16 @@ import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendEmailV
 import {getFirestore,doc,getDoc,setDoc,collection,onSnapshot} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 const app=initializeApp({apiKey:"AIzaSyBN0upeHSSumkUFvYEb9x9e0ti81nH9rSo",authDomain:"liga-nueva-calera-de-tango.firebaseapp.com",projectId:"liga-nueva-calera-de-tango",storageBucket:"liga-nueva-calera-de-tango.firebasestorage.app",messagingSenderId:"22682983108",appId:"1:22682983108:web:cb7b03b840977999164791"});
 const auth=getAuth(app),db=getFirestore(app),adminEmail='tesoreria.nct@gmail.com';
+function showView(view){
+ if(!document.getElementById(view)?.classList.contains('view-section'))return;
+ document.querySelectorAll('.view-section').forEach(section=>{section.hidden=section.id!==view});
+ document.querySelectorAll('.side-menu button').forEach(btn=>{const active=btn.dataset.view===view;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active))});
+ if(location.hash!=='#'+view)history.replaceState(null,'','#'+view);
+}
+document.querySelectorAll('.side-menu button').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
+const initialView=location.hash.slice(1);
+showView(document.getElementById(initialView)?.classList.contains('view-section')?initialView:'posiciones');
+window.addEventListener('hashchange',()=>{const view=location.hash.slice(1);if(document.getElementById(view)?.classList.contains('view-section'))showView(view)});
 const $=id=>document.getElementById(id);
 const category=$('category'),round=$('round'),season=$('season'),out=$('fixture-content'),editor=$('editor'),status=$('save-status'),standings=$('standings');
 let fixture=null,results={},user=null;
