@@ -47,7 +47,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
  </div>
  <div class="grid">
   <section class="card full view-section" id="fixture" hidden><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div id="fixture-content" class="empty">Cargando fixture Clausura 2026…</div></section>
-  <section class="card full view-section" id="admin" hidden><h2>🔐 Administración</h2><div id="login-box"><p>Solo la tesorería puede modificar los resultados oficiales.</p><label for="admin-email">Correo administrador</label><input id="admin-email" type="email" autocomplete="username" value="tesoreria.nct@gmail.com" readonly style="width:100%"><label for="admin-password">Contraseña</label><input id="admin-password" type="password" autocomplete="current-password" style="width:100%"><button id="login-button" type="button">Ingresar</button></div><div id="admin-panel" hidden><p id="admin-user"></p><button id="verify-button" type="button" hidden>Enviar correo de verificación</button><button id="logout-button" type="button">Cerrar sesión</button><p>Selecciona la fecha. Aquí aparecen juntos el Grupo A y el Grupo B para ingresar los goles y las bonificaciones. Las casillas vacías quedan pendientes.</p><div id="editor"></div><button id="save-results" type="button">Guardar resultados oficiales</button></div><p id="save-status" class="muted" role="status"></p></section>
+  <section class="card full view-section" id="admin" hidden><h2>🔐 Administración</h2><div id="login-box"><p>Solo la tesorería puede modificar los resultados oficiales.</p><label for="admin-email">Correo administrador</label><input id="admin-email" type="email" autocomplete="username" value="tesoreria.nct@gmail.com" readonly style="width:100%"><label for="admin-password">Contraseña</label><input id="admin-password" type="password" autocomplete="current-password" style="width:100%"><button id="login-button" type="button">Ingresar</button></div><div id="admin-panel" hidden><p id="admin-user"></p><button id="verify-button" type="button" hidden>Enviar correo de verificación</button><button id="logout-button" type="button">Cerrar sesión</button><p>Selecciona la fecha. Aquí aparecen juntos el Grupo A y el Grupo B para ingresar los goles y las bonificaciones. Las casillas vacías quedan pendientes.</p><div id="editor"></div><button id="save-results" type="button">Guardar resultados oficiales</button> <button id="save-pending" type="button" style="background:#526a7e;margin-top:8px">Guardar fecha sin resultados</button></div><p id="save-status" class="muted" role="status"></p></section>
   <section class="card full view-section" id="posiciones"><h2>🏆 Tabla de posiciones</h2><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
   <section class="card full view-section" id="goleadores" hidden><h2>⚽ Tabla de goleadores</h2><div class="empty">Los goleadores se publicarán cuando se habilite el registro de anotaciones por partido.</div></section>
   <section class="card full view-section" id="multas" hidden><h2>📋 Multas</h2><p class="muted">Las multas oficiales todavía no han sido cargadas. Se publicarán aquí cuando la Asociación registre la información.</p></section>
@@ -111,7 +111,7 @@ function renderEditor(){
 function render(){
  updateRule();
  if(!fixture||season.value!=='2026'){out.textContent='No hay fixture disponible para esta temporada.';editor.replaceChildren();standings.textContent='Sin programación disponible.';return}
- $('save-results').hidden=!isAdmin();
+ $('save-results').hidden=!isAdmin();$('save-pending').hidden=!isAdmin();
  {
   const wrap=document.createDocumentFragment();
   for(let fecha=1;fecha<=9;fecha++){
@@ -205,10 +205,20 @@ $('save-results').addEventListener('click',async()=>{
   }
  }
  }
- if(!writes.length){status.textContent='No hay resultados ni bonificaciones para guardar.';return}
+ if(!writes.length){status.textContent='No hay goles ingresados. Para dejar la fecha registrada como pendiente, presiona «Guardar fecha sin resultados».';return}
  status.textContent='Guardando resultados y bonificaciones…';
  try{await Promise.all(writes.map(r=>setDoc(doc(db,'resultados',r.id),{local:r.local,visita:r.visita})));status.textContent='Resultados y bonificaciones guardados correctamente.'}
  catch(e){status.textContent='Error al guardar. Comprueba la conexión y los permisos de Firebase.'}
+});
+$('save-pending').addEventListener('click',async()=>{
+ if(!isAdmin()){status.textContent='Acceso no autorizado.';return}
+ const fecha=round.value;
+ const id='pendiente_2026_fecha_'+fecha;
+ status.textContent='Registrando fecha '+fecha+' como pendiente…';
+ try{
+  await setDoc(doc(db,'resultados',id),{pendiente:true,fecha:Number(fecha),temporada:2026,registradoEn:new Date().toISOString()});
+  status.textContent='Fecha '+fecha+' guardada como pendiente. No se asignaron goles ni puntos y no se modificaron resultados existentes.';
+ }catch(e){status.textContent='No se pudo guardar la fecha pendiente. Revisa la conexión y los permisos.'}
 });
 onSnapshot(collection(db,'resultados'),snapshot=>{results={};snapshot.forEach(d=>{const v=d.data();if(Number.isInteger(v.local)&&Number.isInteger(v.visita)&&v.local>=0&&v.visita>=0)results[d.id]=v});render()},()=>{status.textContent='No se pudo consultar la base de datos. Comprueba la conexión y los permisos.'});
 fetch('data/fixture-clausura-2026.json').then(r=>r.json()).then(data=>{fixture=data;round.replaceChildren();for(let i=1;i<=9;i++){const o=document.createElement('option');o.value=i;o.textContent='Fecha '+i;round.append(o)}render()}).catch(()=>{out.textContent='No se pudo cargar el fixture.'});
