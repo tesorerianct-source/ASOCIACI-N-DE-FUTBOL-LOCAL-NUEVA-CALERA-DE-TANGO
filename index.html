@@ -193,14 +193,14 @@ $('save-results').addEventListener('click',async()=>{
    if(pair.length!==2)continue;
    const a=pair[0].value.trim(),b=pair[1].value.trim();
    if(a===''&&b==='')continue;
-   if(!/^\\d+$/.test(a)||!/^\\d+$/.test(b)){const partido=matches[i];status.textContent='Resultado incompleto en Grupo '+grupo+', partido '+(i+1)+' ('+partido.local+' vs '+partido.visita+'), serie '+serie+'. Escribe los goles de ambos clubes, incluido 0 si corresponde.';pair.find(x=>!/^\\d+$/.test(x.value.trim()))?.focus();return}
+   if(!/^\d+$/.test(a)||!/^\d+$/.test(b)){const partido=matches[i];status.textContent='Resultado incompleto en Grupo '+grupo+', partido '+(i+1)+' ('+partido.local+' vs '+partido.visita+'), serie '+serie+'. Escribe los goles de ambos clubes, incluido 0 si corresponde.';pair.find(x=>!/^\d+$/.test(x.value.trim()))?.focus();return}
    writes.push({id:matchId(grupo,serie,round.value,i),local:Number(a),visita:Number(b)});
   }
   for(let side=0;side<2;side++){
    const input=inputs.find(x=>x.dataset.grupo===grupo&&x.dataset.match===String(i)&&x.dataset.side===String(side)&&x.dataset.bonus==='1');
    const val=input?.value.trim()||'';
    if(val==='')continue;
-   if(!/^\\d+$/.test(val)){status.textContent='La bonificación debe ser un número entero positivo o cero.';return}
+   if(!/^\d+$/.test(val)){status.textContent='La bonificación debe ser un número entero positivo o cero.';return}
    writes.push({id:bonusId(grupo,round.value,i,side),local:Number(val),visita:0});
   }
  }
