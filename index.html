@@ -105,7 +105,7 @@ function renderEditor(){
    input.dataset.grupo=grupo;input.dataset.match=i;input.dataset.side=side;input.dataset.bonus='1';td.append(input);tr.append(td);
    const totalCell=document.createElement('td');totalCell.style.cssText='font-weight:800;background:#e8f3fc;font-size:15px;min-width:65px';
    totalCell.setAttribute('aria-label','Total de la fila de '+club);
-   const updateTotal=()=>{let sum=0;tr.querySelectorAll('input').forEach(field=>{const v=field.value.trim();if(v!==''&&Number.isFinite(Number(v))&&Number(v)>=0)sum+=Number(v)});totalCell.textContent=String(sum)};
+   const updateTotal=()=>{let sum=0;tr.querySelectorAll('input').forEach(field=>{if(field.dataset.serie==='Tercera Infantil')return;const v=field.value.trim();if(v!==''&&Number.isFinite(Number(v))&&Number(v)>=0)sum+=Number(v)});totalCell.textContent=String(sum)};
    tr.addEventListener('input',updateTotal);tr.append(totalCell);updateTotal();body.append(tr);
   });
   table.append(body);editor.append(table);
