@@ -17,7 +17,7 @@ main{padding:24px 18px 48px}.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-
 button{background:var(--blue);color:white;border:0;font-weight:bold;cursor:pointer}button:hover{filter:brightness(.94)}
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}.card{background:white;border:1px solid var(--line);border-radius:13px;padding:18px;box-shadow:0 3px 12px #102a4310}.wide{grid-column:span 8}.side{grid-column:span 4}.full{grid-column:1/-1}
 h2{font-size:19px;margin:0 0 12px;color:var(--navy)}.muted{color:var(--muted)}.notice{background:#eef6fc;border-left:4px solid var(--blue);padding:12px 14px;border-radius:7px;font-size:14px}
-table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:12px;text-transform:uppercase}
+table{width:100%;border-collapse:collapse;font-size:14px}#standings{overflow-x:auto}#standings table{min-width:660px}#standings tbody tr:nth-child(odd){background:#eaf4ff}#standings tbody tr:first-child{font-weight:bold}#standings th:last-child,#standings td:last-child{font-weight:bold;background:#dcecff}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:12px;text-transform:uppercase}
 .empty{text-align:center;padding:28px 12px;color:var(--muted)}.pill{display:inline-block;background:#e8f3ed;color:var(--green);padding:4px 9px;border-radius:20px;font-size:12px;font-weight:bold}
 footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 @media(max-width:760px){.wide,.side{grid-column:1/-1}.card{padding:15px}table{font-size:12px}th,td{padding:8px 5px}}
@@ -78,8 +78,8 @@ function renderStandings(){
   else{a.e++;b.e++;a.pts+=category.value==='Primera Adulta'?2:1;b.pts+=category.value==='Primera Adulta'?2:1}
  });
  const sorted=[...teams.values()].sort((a,b)=>b.pts-a.pts||((b.gf-b.gc)-(a.gf-a.gc))||b.gf-a.gf||a.name.localeCompare(b.name));
- const table=document.createElement('table');table.innerHTML='<thead><tr><th>Club</th><th>J</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DF</th><th>PTS</th></tr></thead>';
- const body=document.createElement('tbody');sorted.forEach(t=>{const tr=document.createElement('tr');[t.name,t.j,t.g,t.e,t.p,t.gf,t.gc,t.gf-t.gc,t.pts].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});body.append(tr)});table.append(body);standings.replaceChildren(table);standings.className='';
+ const table=document.createElement('table');table.innerHTML='<thead><tr><th>Pos</th><th>Equipo</th><th>J</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DF</th><th>Pts.</th></tr></thead>';
+ const body=document.createElement('tbody');sorted.forEach((t,i)=>{const tr=document.createElement('tr');[i+1,t.name,t.j,t.g,t.e,t.p,t.gf,t.gc,t.gf-t.gc,t.pts].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});body.append(tr)});table.append(body);const heading=document.createElement('h3');heading.textContent=category.value.toUpperCase()+' · GRUPO '+group.value+' · CLAUSURA '+season.value;heading.style.cssText='text-align:center;background:#1a9ed1;color:white;padding:9px;margin:10px 0 0;font-size:16px';standings.replaceChildren(heading,table);standings.className='';
 }
 for(const el of [category,group,round,season])el.addEventListener('change',render);
 $('login-button').addEventListener('click',async()=>{status.textContent='Verificando acceso…';try{await signInWithEmailAndPassword(auth,adminEmail,$('admin-password').value);$('admin-password').value='';status.textContent='Sesión iniciada.'}catch(e){status.textContent='No se pudo iniciar sesión. Revisa la contraseña y vuelve a intentarlo.'}});
