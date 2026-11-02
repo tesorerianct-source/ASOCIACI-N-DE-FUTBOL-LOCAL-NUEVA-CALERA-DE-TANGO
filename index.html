@@ -37,7 +37,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
  <div class="grid">
   <section class="card wide" id="fixture"><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div id="fixture-content" class="empty">Cargando fixture Clausura 2026…</div></section>
   <section class="card side" id="admin"><h2>🔐 Administración</h2><div id="login-box"><p>Solo la tesorería puede modificar los resultados oficiales.</p><label for="admin-email">Correo administrador</label><input id="admin-email" type="email" autocomplete="username" value="tesoreria.nct@gmail.com" readonly style="width:100%"><label for="admin-password">Contraseña</label><input id="admin-password" type="password" autocomplete="current-password" style="width:100%"><button id="login-button" type="button">Ingresar</button></div><div id="admin-panel" hidden><p id="admin-user"></p><button id="verify-button" type="button" hidden>Enviar correo de verificación</button><button id="logout-button" type="button">Cerrar sesión</button><p>Selecciona grupo, fecha y categoría arriba. Ingresa los goles y guarda.</p><div id="editor"></div><button id="save-results" type="button">Guardar resultados oficiales</button></div><p id="save-status" class="muted" role="status"></p></section>
-  <section class="card full" id="posiciones"><h2>🏆 Tabla de posiciones</h2><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tabla de posiciones…</div></section>
+  <section class="card full" id="posiciones"><h2>🏆 Tabla de posiciones</h2><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
   <section class="card full" id="goleadores"><h2>⚽ Tabla de goleadores</h2><div class="empty">Los goleadores se publicarán cuando se habilite el registro de anotaciones por partido.</div></section>
  </div>
 </main>
@@ -67,19 +67,37 @@ function render(){
  });
  table.append(body);out.replaceChildren(table);renderStandings();
 }
-function renderStandings(){
- const teams=new Map();const matches=fixture?.grupos.find(g=>g.id===group.value)?.fechas||[];
- for(const fecha of matches)fecha.partidos.forEach((p,i)=>{
+const SERIES=['Dorados','Súper Senior','Senior','Tercera Infantil','Femenino','Segunda Infantil','Juvenil','Tercera Adulta','Segunda Adulta','Primera Adulta'];
+function calculateStandings(serie){
+ const teams=new Map(),fechas=fixture?.grupos.find(g=>g.id===group.value)?.fechas||[];
+ for(const fecha of fechas)fecha.partidos.forEach((p,i)=>{
   for(const name of [p.local,p.visita])if(!teams.has(name))teams.set(name,{name,j:0,g:0,e:0,p:0,gf:0,gc:0,pts:0});
-  const r=results[matchId(group.value,category.value,fecha.numero,i)];if(!r)return;
+  const r=results[matchId(group.value,serie,fecha.numero,i)];if(!r)return;
   const a=teams.get(p.local),b=teams.get(p.visita);a.j++;b.j++;a.gf+=r.local;a.gc+=r.visita;b.gf+=r.visita;b.gc+=r.local;
-  if(r.local>r.visita){a.g++;b.p++;a.pts+=category.value==='Primera Adulta'?4:3}
-  else if(r.local<r.visita){b.g++;a.p++;b.pts+=category.value==='Primera Adulta'?4:3}
-  else{a.e++;b.e++;a.pts+=category.value==='Primera Adulta'?2:1;b.pts+=category.value==='Primera Adulta'?2:1}
+  if(r.local>r.visita){a.g++;b.p++;a.pts+=serie==='Primera Adulta'?4:3}
+  else if(r.local<r.visita){b.g++;a.p++;b.pts+=serie==='Primera Adulta'?4:3}
+  else{a.e++;b.e++;a.pts+=serie==='Primera Adulta'?2:1;b.pts+=serie==='Primera Adulta'?2:1}
  });
- const sorted=[...teams.values()].sort((a,b)=>b.pts-a.pts||((b.gf-b.gc)-(a.gf-a.gc))||b.gf-a.gf||a.name.localeCompare(b.name));
+ return [...teams.values()];
+}
+function makeTable(title,teams){
+ const sorted=[...teams].sort((a,b)=>b.pts-a.pts||((b.gf-b.gc)-(a.gf-a.gc))||b.gf-a.gf||a.name.localeCompare(b.name));
+ const container=document.createElement('section');container.style.marginBottom='24px';
+ const heading=document.createElement('h3');heading.textContent=title+' · GRUPO '+group.value+' · CLAUSURA '+season.value;heading.style.cssText='text-align:center;background:#1a9ed1;color:white;padding:9px;margin:10px 0 0;font-size:16px';container.append(heading);
  const table=document.createElement('table');table.innerHTML='<thead><tr><th>Pos</th><th>Equipo</th><th>J</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DF</th><th>Pts.</th></tr></thead>';
- const body=document.createElement('tbody');sorted.forEach((t,i)=>{const tr=document.createElement('tr');[i+1,t.name,t.j,t.g,t.e,t.p,t.gf,t.gc,t.gf-t.gc,t.pts].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});body.append(tr)});table.append(body);const heading=document.createElement('h3');heading.textContent=category.value.toUpperCase()+' · GRUPO '+group.value+' · CLAUSURA '+season.value;heading.style.cssText='text-align:center;background:#1a9ed1;color:white;padding:9px;margin:10px 0 0;font-size:16px';standings.replaceChildren(heading,table);standings.className='';
+ const body=document.createElement('tbody');sorted.forEach((t,i)=>{const tr=document.createElement('tr');[i+1,t.name,t.j,t.g,t.e,t.p,t.gf,t.gc,t.gf-t.gc,t.pts].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});body.append(tr)});table.append(body);container.append(table);return container;
+}
+function renderStandings(){
+ const tables=SERIES.map(serie=>({serie,teams:calculateStandings(serie)}));
+ const general=new Map();
+ for(const {teams} of tables)for(const t of teams){
+  if(!general.has(t.name))general.set(t.name,{name:t.name,j:0,g:0,e:0,p:0,gf:0,gc:0,pts:0});
+  const total=general.get(t.name);for(const field of ['j','g','e','p','gf','gc','pts'])total[field]+=t[field];
+ }
+ const fragment=document.createDocumentFragment();
+ fragment.append(makeTable('TABLA GENERAL · TODAS LAS SERIES',[...general.values()]));
+ for(const {serie,teams} of tables)fragment.append(makeTable(serie.toUpperCase(),teams));
+ standings.replaceChildren(fragment);standings.className='';
 }
 for(const el of [category,group,round,season])el.addEventListener('change',render);
 $('login-button').addEventListener('click',async()=>{status.textContent='Verificando acceso…';try{await signInWithEmailAndPassword(auth,adminEmail,$('admin-password').value);$('admin-password').value='';status.textContent='Sesión iniciada.'}catch(e){status.textContent='No se pudo iniciar sesión. Revisa la contraseña y vuelve a intentarlo.'}});
