@@ -105,10 +105,30 @@ function renderEditor(){
    input.dataset.grupo=grupo;input.dataset.match=i;input.dataset.side=side;input.dataset.bonus='1';td.append(input);tr.append(td);
    const totalCell=document.createElement('td');totalCell.style.cssText='font-weight:800;background:#e8f3fc;font-size:15px;min-width:65px';
    totalCell.setAttribute('aria-label','Total de la fila de '+club);
-   const updateTotal=()=>{let sum=0;tr.querySelectorAll('input').forEach(field=>{if(field.dataset.serie==='Tercera Infantil')return;const v=field.value.trim();if(v!==''&&Number.isFinite(Number(v))&&Number(v)>=0)sum+=Number(v)});totalCell.textContent=String(sum)};
-   tr.addEventListener('input',updateTotal);tr.append(totalCell);updateTotal();body.append(tr);
+   const updateTotals=()=>{
+    const rows=[...body.querySelectorAll('tr')];
+    if(rows.length!==2)return;
+    rows.forEach((row,teamSide)=>{
+     let sum=0;
+     for(const serie of SERIES){
+      if(serie==='Tercera Infantil')continue;
+      const own=row.querySelector('input[data-serie="'+serie+'"]');
+      const other=rows[1-teamSide].querySelector('input[data-serie="'+serie+'"]');
+      if(!own||!other||own.value.trim()===''||other.value.trim()==='')continue;
+      const a=Number(own.value),b=Number(other.value);
+      if(!Number.isInteger(a)||!Number.isInteger(b)||a<0||b<0)continue;
+      sum+=a>b?(serie==='Primera Adulta'?4:3):a===b?(serie==='Primera Adulta'?2:1):0;
+     }
+     const bonus=row.querySelector('input[data-bonus="1"]');
+     if(bonus&&bonus.value.trim()!==''&&Number.isFinite(Number(bonus.value)))sum+=Number(bonus.value);
+     const cell=row.querySelector('[data-total="1"]');
+     if(cell)cell.textContent=String(sum);
+    });
+   };
+   totalCell.dataset.total='1';tr.append(totalCell);body.addEventListener('input',updateTotals);updateTotals();body.append(tr);
   });
   table.append(body);editor.append(table);
+  body.dispatchEvent(new Event('input'));
  });
  }
 }
