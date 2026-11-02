@@ -38,7 +38,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
  </div>
  <div class="grid">
   <section class="card wide" id="fixture"><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div id="fixture-content" class="empty">Cargando fixture Clausura 2026…</div></section>
-  <section class="card side" id="admin"><h2>🔐 Administración</h2><p>El acceso administrativo permitirá cargar el fixture PDF, ingresar resultados y registrar goleadores.</p><div class="notice">El ingreso privado se habilitará junto con la autenticación segura y la base de datos.</div></section>
+  <section class="card side" id="admin"><h2>📝 Ingreso de resultados — prueba</h2><p>Selecciona temporada, grupo, fecha y categoría en la parte superior. Completa los goles de cada partido.</p><div class="notice">Modo de prueba: los datos se guardan solamente en este navegador. No se publican ni son visibles para los clubes. No es un acceso privado.</div><div id="editor"></div><button id="save-results" type="button">Guardar prueba en este navegador</button><p id="save-status" class="muted" role="status"></p></section>
   <section class="card full" id="posiciones"><h2>🏆 Tabla de posiciones</h2><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div class="empty">La tabla aparecerá automáticamente cuando se carguen los partidos y sus resultados oficiales.</div></section>
   <section class="card full" id="goleadores"><h2>⚽ Tabla de goleadores</h2><div class="empty">Los goleadores se publicarán cuando se habilite el registro de anotaciones por partido.</div></section>
  </div>
@@ -48,11 +48,11 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 const category=document.getElementById('category');
 const rule=document.getElementById('points-rule');
 function updateRule(){rule.textContent=category.value==='Primera Adulta'?'Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.':'Esta categoría: 3 puntos por triunfo, 1 por empate y 0 por derrota.'}
-category.addEventListener('change',updateRule);updateRule();
+category.addEventListener('change',updateRule);category.addEventListener('change',()=>{if(fixture)renderFixture()});updateRule();
 const group=document.getElementById('group'),round=document.getElementById('round'),season=document.getElementById('season'),out=document.getElementById('fixture-content');
-let fixture=null;
+let fixture=null;const editor=document.getElementById('editor'),status=document.getElementById('save-status');const storageKey='anct-resultados-prueba-v1';let draft={};try{draft=JSON.parse(localStorage.getItem(storageKey)||'{}')}catch(e){draft={}}function key(){return [season.value,group.value,category.value,round.value].join('|')}
 function renderFixture(){
- if(season.value!=='2026'){out.className='empty';out.textContent='La programación de esta temporada todavía no está disponible.';return;}
+ if(season.value!=='2026'){out.className='empty';out.textContent='La programación de esta temporada todavía no está disponible.';editor.replaceChildren();return;}
  if(!fixture){out.className='empty';out.textContent='No se pudo cargar el fixture. Intenta actualizar la página.';return;}
  const selected=fixture.grupos.find(g=>g.id===group.value);
  const fecha=selected?.fechas.find(f=>f.numero===Number(round.value));
@@ -62,8 +62,27 @@ function renderFixture(){
  const head=document.createElement('thead');head.innerHTML='<tr><th>N°</th><th>Local</th><th></th><th>Visita</th></tr>';table.append(head);
  const body=document.createElement('tbody');
  fecha.partidos.forEach((p,i)=>{const tr=document.createElement('tr');[String(i+1),p.local,'VS',p.visita].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});body.append(tr)});
- table.append(body);out.replaceChildren(table);
+ table.append(body);out.replaceChildren(table);renderEditor(fecha);
 }
+function renderEditor(fecha){
+ editor.replaceChildren();status.textContent='';
+ const saved=draft[key()]||{};
+ fecha.partidos.forEach((p,i)=>{
+  const wrap=document.createElement('div');wrap.style.cssText='border-bottom:1px solid #dce4ea;padding:12px 0';
+  const title=document.createElement('div');title.textContent=p.local+' vs '+p.visita;title.style.fontWeight='bold';wrap.append(title);
+  const row=document.createElement('div');row.style.cssText='display:flex;gap:8px;margin-top:7px;align-items:center';
+  [0,1].forEach((n)=>{const field=document.createElement('input');field.type='number';field.min='0';field.step='1';field.placeholder=n===0?'Local':'Visita';field.setAttribute('aria-label','Goles '+(n===0?p.local:p.visita));field.dataset.match=i;field.dataset.side=n;field.style.width='90px';field.value=saved[i]?.[n]??'';row.append(field)});
+  wrap.append(row);editor.append(wrap);
+ });
+}
+document.getElementById('save-results').addEventListener('click',()=>{
+ if(!fixture||season.value!=='2026'){status.textContent='No hay partidos disponibles para guardar.';return}
+ const values={};let invalid=false;
+ editor.querySelectorAll('input').forEach(el=>{if(el.value!==''&&(!Number.isInteger(Number(el.value))||Number(el.value)<0))invalid=true;const i=el.dataset.match;values[i]??=['',''];values[i][Number(el.dataset.side)]=el.value});
+ if(invalid){status.textContent='Ingresa solamente números enteros de goles iguales o mayores que cero.';return}
+ draft[key()]=values;
+ try{localStorage.setItem(storageKey,JSON.stringify(draft));status.textContent='Prueba guardada en este navegador. Todavía NO se publicó en la página para los clubes.'}catch(e){status.textContent='No fue posible guardar en este navegador.'}
+});
 group.addEventListener('change',renderFixture);round.addEventListener('change',renderFixture);season.addEventListener('change',renderFixture);
 fetch('data/fixture-clausura-2026.json').then(r=>{if(!r.ok)throw Error('No disponible');return r.json()}).then(data=>{fixture=data;round.replaceChildren();for(let i=1;i<=9;i++){const opt=document.createElement('option');opt.value=i;opt.textContent='Fecha '+i;round.append(opt)}renderFixture()}).catch(()=>{out.textContent='No se pudo cargar el fixture. Intenta actualizar la página.'});
 </script>
