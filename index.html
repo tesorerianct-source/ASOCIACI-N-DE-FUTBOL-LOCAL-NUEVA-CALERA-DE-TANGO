@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Programación, resultados y tablas de posiciones de la Asociación de Fútbol Local Nueva Calera de Tango.">
+<title>Asociación Nueva Calera de Tango</title>
+<style>
+:root{--navy:#102a43;--blue:#1769aa;--green:#1f7a55;--bg:#f3f6f8;--ink:#172b3a;--muted:#647789;--line:#dce4ea}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Arial,Helvetica,sans-serif}
+header{background:linear-gradient(120deg,#102a43,#1769aa);color:white;padding:26px 18px 22px}
+.wrap{max-width:1120px;margin:auto}.brand{display:flex;align-items:center;gap:14px}.crest{width:54px;height:54px;border:2px solid #ffffff99;border-radius:50%;display:grid;place-items:center;font-size:25px}
+h1{font-size:clamp(22px,4vw,32px);margin:0}header p{margin:5px 0 0;color:#d9e8f5}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}nav a{color:white;text-decoration:none;padding:8px 12px;border:1px solid #ffffff55;border-radius:8px;font-size:14px}
+main{padding:24px 18px 48px}.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:20px}
+.field{display:grid;gap:5px}label{font-size:13px;font-weight:bold;color:var(--muted)}select,input,button{font:inherit;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:white;color:var(--ink)}
+button{background:var(--blue);color:white;border:0;font-weight:bold;cursor:pointer}button:hover{filter:brightness(.94)}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}.card{background:white;border:1px solid var(--line);border-radius:13px;padding:18px;box-shadow:0 3px 12px #102a4310}.wide{grid-column:span 8}.side{grid-column:span 4}.full{grid-column:1/-1}
+h2{font-size:19px;margin:0 0 12px;color:var(--navy)}.muted{color:var(--muted)}.notice{background:#eef6fc;border-left:4px solid var(--blue);padding:12px 14px;border-radius:7px;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:12px;text-transform:uppercase}
+.empty{text-align:center;padding:28px 12px;color:var(--muted)}.pill{display:inline-block;background:#e8f3ed;color:var(--green);padding:4px 9px;border-radius:20px;font-size:12px;font-weight:bold}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
+@media(max-width:760px){.wide,.side{grid-column:1/-1}.card{padding:15px}table{font-size:12px}th,td{padding:8px 5px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+ <div class="brand"><div class="crest">⚽</div><div><h1>Asociación Nueva Calera de Tango</h1><p>Fútbol local · Programación y resultados oficiales</p></div></div>
+ <nav><a href="#fixture">Fixture</a><a href="#posiciones">Tablas de posiciones</a><a href="#goleadores">Goleadores</a><a href="#admin">Administración</a></nav>
+</div></header>
+<main class="wrap">
+ <div class="toolbar">
+  <div class="field"><label for="season">TEMPORADA</label><select id="season"><option>2026</option><option>2027</option></select></div>
+  <div class="field"><label for="category">CATEGORÍA</label><select id="category">
+   <option>Primera Adulta</option><option>Segunda Adulta</option><option>Tercera Adulta</option><option>Senior</option><option>Súper Senior</option><option>Juvenil</option><option>Femenino</option><option>Dorados</option><option>Tercera Infantil</option><option>Segunda Infantil</option>
+  </select></div>
+  <span class="pill">Información oficial</span>
+ </div>
+ <div class="grid">
+  <section class="card wide" id="fixture"><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div class="empty">El fixture PDF se incorporará aquí cuando sea entregado por la Asociación.</div></section>
+  <section class="card side" id="admin"><h2>🔐 Administración</h2><p>El acceso administrativo permitirá cargar el fixture PDF, ingresar resultados y registrar goleadores.</p><div class="notice">El ingreso privado se habilitará junto con la autenticación segura y la base de datos.</div></section>
+  <section class="card full" id="posiciones"><h2>🏆 Tabla de posiciones</h2><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div class="empty">La tabla aparecerá automáticamente cuando se carguen los partidos y sus resultados oficiales.</div></section>
+  <section class="card full" id="goleadores"><h2>⚽ Tabla de goleadores</h2><div class="empty">Los goleadores se publicarán cuando se habilite el registro de anotaciones por partido.</div></section>
+ </div>
+</main>
+<footer>© Asociación de Fútbol Local Nueva Calera de Tango</footer>
+<script>
+const category=document.getElementById('category');
+const rule=document.getElementById('points-rule');
+function updateRule(){rule.textContent=category.value==='Primera Adulta'?'Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.':'Esta categoría: 3 puntos por triunfo, 1 por empate y 0 por derrota.'}
+category.addEventListener('change',updateRule);updateRule();
+</script>
+</body></html>
