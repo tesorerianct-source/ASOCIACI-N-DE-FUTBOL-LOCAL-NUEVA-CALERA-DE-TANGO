@@ -91,7 +91,7 @@ function renderEditor(){
  matches.forEach((p,i)=>{
   const label=document.createElement('div');label.className='match-label';label.textContent='Partido '+(i+1)+' · '+p.local+' vs '+p.visita;editor.append(label);
   const table=document.createElement('table'),head=document.createElement('thead'),hr=document.createElement('tr');
-  ['CLUBES',...SERIES.map(v=>({'Súper Senior':'S. SENIOR','Tercera Infantil':'3ª INF.','Segunda Infantil':'2ª INF.','Tercera Adulta':'3ª AD.','Segunda Adulta':'2ª AD.','Primera Adulta':'1ª AD.'}[v]||v)),'BONIFICACIÓN'].forEach(v=>{const th=document.createElement('th');th.textContent=v;hr.append(th)});head.append(hr);table.append(head);
+  ['CLUBES',...SERIES.map(v=>({'Súper Senior':'S. SENIOR','Tercera Infantil':'3ª INF.','Segunda Infantil':'2ª INF.','Tercera Adulta':'3ª AD.','Segunda Adulta':'2ª AD.','Primera Adulta':'1ª AD.'}[v]||v)),'BONIFICACIÓN','TOTAL'].forEach(v=>{const th=document.createElement('th');th.textContent=v;hr.append(th)});head.append(hr);table.append(head);
   const body=document.createElement('tbody');
   [p.local,p.visita].forEach((club,side)=>{
    const tr=document.createElement('tr'),name=document.createElement('td');name.textContent=club;tr.append(name);
@@ -102,7 +102,11 @@ function renderEditor(){
    });
    const td=document.createElement('td'),input=document.createElement('input'),r=results[bonusId(grupo,round.value,i,side)];
    input.type='number';input.min='0';input.step='1';input.placeholder='0';input.value=r?String(r.local):'';
-   input.dataset.grupo=grupo;input.dataset.match=i;input.dataset.side=side;input.dataset.bonus='1';td.append(input);tr.append(td);body.append(tr);
+   input.dataset.grupo=grupo;input.dataset.match=i;input.dataset.side=side;input.dataset.bonus='1';td.append(input);tr.append(td);
+   const totalCell=document.createElement('td');totalCell.style.cssText='font-weight:800;background:#e8f3fc;font-size:15px;min-width:65px';
+   totalCell.setAttribute('aria-label','Total de la fila de '+club);
+   const updateTotal=()=>{let sum=0;tr.querySelectorAll('input').forEach(field=>{const v=field.value.trim();if(v!==''&&Number.isFinite(Number(v))&&Number(v)>=0)sum+=Number(v)});totalCell.textContent=String(sum)};
+   tr.addEventListener('input',updateTotal);tr.append(totalCell);updateTotal();body.append(tr);
   });
   table.append(body);editor.append(table);
  });
