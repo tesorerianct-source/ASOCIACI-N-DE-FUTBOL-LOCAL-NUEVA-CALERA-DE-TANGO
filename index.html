@@ -40,7 +40,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
  <button type="button" data-view="admin">🔐 Administración</button>
  </aside>
  <div class="site-content">
- <div class="toolbar">
+ <div class="toolbar" id="filters-toolbar">
   <div class="field"><label for="season">TEMPORADA</label><select id="season"><option>2026</option><option>2027</option></select></div>
   <div class="field"><label for="round">FECHA</label><select id="round"></select></div><div class="field"><label for="category">CATEGORÍA · BUSCAR</label><select id="category"><option value="todas">Todas las tablas</option><option value="general">Tabla general</option><option>Dorados</option><option>Súper Senior</option><option>Senior</option><option>Tercera Infantil</option><option>Femenino</option><option>Segunda Infantil</option><option>Juvenil</option><option>Tercera Adulta</option><option>Segunda Adulta</option><option>Primera Adulta</option></select></div>
   <span class="pill">Clausura 2026</span>
@@ -67,6 +67,7 @@ function showView(view){
  if(!document.getElementById(view)?.classList.contains('view-section'))return;
  document.querySelectorAll('.view-section').forEach(section=>{section.hidden=section.id!==view});
  document.querySelectorAll('.side-menu button').forEach(btn=>{const active=btn.dataset.view===view;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active))});
+ document.getElementById('filters-toolbar').hidden=view!=='admin'&&view!=='posiciones';
  if(location.hash!=='#'+view)history.replaceState(null,'','#'+view);
 }
 document.querySelectorAll('.side-menu button').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
@@ -111,15 +112,18 @@ function render(){
  updateRule();
  if(!fixture||season.value!=='2026'){out.textContent='No hay fixture disponible para esta temporada.';editor.replaceChildren();standings.textContent='Sin programación disponible.';return}
  $('save-results').hidden=!isAdmin();
- if(category.value==='general'){out.textContent='La tabla general reúne todas las series, excepto Tercera Infantil, más las bonificaciones.'}
- else{
+ {
   const wrap=document.createDocumentFragment();
-  for(const grupo of ['A','B']){
-   const heading=document.createElement('h3');heading.textContent='Grupo '+grupo+' · Fecha '+round.value;wrap.append(heading);
-   const table=document.createElement('table');table.innerHTML='<thead><tr><th>Local</th><th>Resultado</th><th>Visita</th></tr></thead>';
-   const body=document.createElement('tbody');
-   selectedMatches(grupo).forEach((p,i)=>{const r=category.value==='todas'?null:results[matchId(grupo,category.value,round.value,i)],tr=document.createElement('tr');[p.local,r?r.local+' - '+r.visita:category.value==='todas'?'Selecciona una serie':'Pendiente',p.visita].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});body.append(tr)});
-   table.append(body);wrap.append(table);
+  for(let fecha=1;fecha<=9;fecha++){
+   const dateHeading=document.createElement('h3');dateHeading.textContent='FECHA '+fecha;dateHeading.style.cssText='background:#1769aa;color:white;padding:10px;border-radius:6px;margin:18px 0 8px';wrap.append(dateHeading);
+   for(const grupo of ['A','B']){
+    const heading=document.createElement('h4');heading.textContent='Grupo '+grupo;heading.style.margin='12px 0 5px';wrap.append(heading);
+    const table=document.createElement('table');table.innerHTML='<thead><tr><th>Local</th><th>Visita</th></tr></thead>';
+    const body=document.createElement('tbody');
+    const matches=fixture?.grupos.find(g=>g.id===grupo)?.fechas.find(f=>f.numero===fecha)?.partidos||[];
+    matches.forEach(p=>{const tr=document.createElement('tr');[p.local,p.visita].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});body.append(tr)});
+    table.append(body);wrap.append(table);
+   }
   }
   out.replaceChildren(wrap);
  }
