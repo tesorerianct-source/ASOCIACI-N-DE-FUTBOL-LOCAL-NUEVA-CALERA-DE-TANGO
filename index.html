@@ -31,13 +31,13 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 <main class="wrap">
  <div class="toolbar">
   <div class="field"><label for="season">TEMPORADA</label><select id="season"><option>2026</option><option>2027</option></select></div>
-  <div class="field"><label for="category">CATEGORÍA</label><select id="category">
+  <div class="field"><label for="group">GRUPO</label><select id="group"><option value="A">Grupo A</option><option value="B">Grupo B</option></select></div><div class="field"><label for="round">FECHA</label><select id="round"></select></div><div class="field"><label for="category">CATEGORÍA</label><select id="category">
    <option>Primera Adulta</option><option>Segunda Adulta</option><option>Tercera Adulta</option><option>Senior</option><option>Súper Senior</option><option>Juvenil</option><option>Femenino</option><option>Dorados</option><option>Tercera Infantil</option><option>Segunda Infantil</option>
   </select></div>
   <span class="pill">Información oficial</span>
  </div>
  <div class="grid">
-  <section class="card wide" id="fixture"><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div class="empty">El fixture PDF se incorporará aquí cuando sea entregado por la Asociación.</div></section>
+  <section class="card wide" id="fixture"><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div id="fixture-content" class="empty">Cargando fixture Clausura 2026…</div></section>
   <section class="card side" id="admin"><h2>🔐 Administración</h2><p>El acceso administrativo permitirá cargar el fixture PDF, ingresar resultados y registrar goleadores.</p><div class="notice">El ingreso privado se habilitará junto con la autenticación segura y la base de datos.</div></section>
   <section class="card full" id="posiciones"><h2>🏆 Tabla de posiciones</h2><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div class="empty">La tabla aparecerá automáticamente cuando se carguen los partidos y sus resultados oficiales.</div></section>
   <section class="card full" id="goleadores"><h2>⚽ Tabla de goleadores</h2><div class="empty">Los goleadores se publicarán cuando se habilite el registro de anotaciones por partido.</div></section>
@@ -49,5 +49,22 @@ const category=document.getElementById('category');
 const rule=document.getElementById('points-rule');
 function updateRule(){rule.textContent=category.value==='Primera Adulta'?'Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.':'Esta categoría: 3 puntos por triunfo, 1 por empate y 0 por derrota.'}
 category.addEventListener('change',updateRule);updateRule();
+const group=document.getElementById('group'),round=document.getElementById('round'),season=document.getElementById('season'),out=document.getElementById('fixture-content');
+let fixture=null;
+function renderFixture(){
+ if(season.value!=='2026'){out.className='empty';out.textContent='La programación de esta temporada todavía no está disponible.';return;}
+ if(!fixture){out.className='empty';out.textContent='No se pudo cargar el fixture. Intenta actualizar la página.';return;}
+ const selected=fixture.grupos.find(g=>g.id===group.value);
+ const fecha=selected?.fechas.find(f=>f.numero===Number(round.value));
+ if(!fecha)return;
+ out.className='';
+ const table=document.createElement('table');
+ const head=document.createElement('thead');head.innerHTML='<tr><th>N°</th><th>Local</th><th></th><th>Visita</th></tr>';table.append(head);
+ const body=document.createElement('tbody');
+ fecha.partidos.forEach((p,i)=>{const tr=document.createElement('tr');[String(i+1),p.local,'VS',p.visita].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});body.append(tr)});
+ table.append(body);out.replaceChildren(table);
+}
+group.addEventListener('change',renderFixture);round.addEventListener('change',renderFixture);season.addEventListener('change',renderFixture);
+fetch('data/fixture-clausura-2026.json').then(r=>{if(!r.ok)throw Error('No disponible');return r.json()}).then(data=>{fixture=data;round.replaceChildren();for(let i=1;i<=9;i++){const opt=document.createElement('option');opt.value=i;opt.textContent='Fecha '+i;round.append(opt)}renderFixture()}).catch(()=>{out.textContent='No se pudo cargar el fixture. Intenta actualizar la página.'});
 </script>
 </body></html>
