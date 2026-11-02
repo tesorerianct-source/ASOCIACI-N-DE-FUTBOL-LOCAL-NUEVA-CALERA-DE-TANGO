@@ -1,0 +1,466 @@
+{
+  "torneo": "Clausura",
+  "temporada": 2026,
+  "grupos": [
+    {
+      "id": "A",
+      "fechas": [
+        {
+          "numero": 1,
+          "partidos": [
+            {
+              "local": "ROTO CHILENO",
+              "visita": "HURACAN"
+            },
+            {
+              "local": "TRICOLOR DE CHENA",
+              "visita": "LOS BAJOS"
+            },
+            {
+              "local": "ESTRELLA DE CARACAS",
+              "visita": "ISLOTE SNIPE"
+            },
+            {
+              "local": "JUVENTUD UNIDA",
+              "visita": "DEFENSOR LOS SAUCES"
+            },
+            {
+              "local": "UNION LO HERRERA",
+              "visita": "SAN MIGUEL"
+            }
+          ]
+        },
+        {
+          "numero": 2,
+          "partidos": [
+            {
+              "local": "HURACAN",
+              "visita": "SAN MIGUEL"
+            },
+            {
+              "local": "DEFENSOR LOS SAUCES",
+              "visita": "UNION LO HERRERA"
+            },
+            {
+              "local": "ISLOTE SNIPE",
+              "visita": "JUVENTUD UNIDA"
+            },
+            {
+              "local": "LOS BAJOS",
+              "visita": "ESTRELLA DE CARACAS"
+            },
+            {
+              "local": "ROTO CHILENO",
+              "visita": "TRICOLOR DE CHENA"
+            }
+          ]
+        },
+        {
+          "numero": 3,
+          "partidos": [
+            {
+              "local": "TRICOLOR DE CHENA",
+              "visita": "HURACAN"
+            },
+            {
+              "local": "ESTRELLA DE CARACAS",
+              "visita": "ROTO CHILENO"
+            },
+            {
+              "local": "JUVENTUD UNIDA",
+              "visita": "LOS BAJOS"
+            },
+            {
+              "local": "UNION LO HERRERA",
+              "visita": "ISLOTE SNIPE"
+            },
+            {
+              "local": "SAN MIGUEL",
+              "visita": "DEFENSOR LOS SAUCES"
+            }
+          ]
+        },
+        {
+          "numero": 4,
+          "partidos": [
+            {
+              "local": "HURACAN",
+              "visita": "DEFENSOR LOS SAUCES"
+            },
+            {
+              "local": "ISLOTE SNIPE",
+              "visita": "SAN MIGUEL"
+            },
+            {
+              "local": "LOS BAJOS",
+              "visita": "UNION LO HERRERA"
+            },
+            {
+              "local": "ROTO CHILENO",
+              "visita": "JUVENTUD UNIDA"
+            },
+            {
+              "local": "TRICOLOR DE CHENA",
+              "visita": "ESTRELLA DE CARACAS"
+            }
+          ]
+        },
+        {
+          "numero": 5,
+          "partidos": [
+            {
+              "local": "ESTRELLA DE CARACAS",
+              "visita": "HURACAN"
+            },
+            {
+              "local": "JUVENTUD UNIDA",
+              "visita": "TRICOLOR DE CHENA"
+            },
+            {
+              "local": "UNION LO HERRERA",
+              "visita": "ROTO CHILENO"
+            },
+            {
+              "local": "SAN MIGUEL",
+              "visita": "LOS BAJOS"
+            },
+            {
+              "local": "DEFENSOR LOS SAUCES",
+              "visita": "ISLOTE SNIPE"
+            }
+          ]
+        },
+        {
+          "numero": 6,
+          "partidos": [
+            {
+              "local": "HURACAN",
+              "visita": "ISLOTE SNIPE"
+            },
+            {
+              "local": "LOS BAJOS",
+              "visita": "DEFENSOR LOS SAUCES"
+            },
+            {
+              "local": "ROTO CHILENO",
+              "visita": "SAN MIGUEL"
+            },
+            {
+              "local": "TRICOLOR DE CHENA",
+              "visita": "UNION LO HERRERA"
+            },
+            {
+              "local": "ESTRELLA DE CARACAS",
+              "visita": "JUVENTUD UNIDA"
+            }
+          ]
+        },
+        {
+          "numero": 7,
+          "partidos": [
+            {
+              "local": "JUVENTUD UNIDA",
+              "visita": "HURACAN"
+            },
+            {
+              "local": "UNION LO HERRERA",
+              "visita": "ESTRELLA DE CARACAS"
+            },
+            {
+              "local": "SAN MIGUEL",
+              "visita": "TRICOLOR DE CHENA"
+            },
+            {
+              "local": "DEFENSOR LOS SAUCES",
+              "visita": "ROTO CHILENO"
+            },
+            {
+              "local": "ISLOTE SNIPE",
+              "visita": "LOS BAJOS"
+            }
+          ]
+        },
+        {
+          "numero": 8,
+          "partidos": [
+            {
+              "local": "HURACAN",
+              "visita": "LOS BAJOS"
+            },
+            {
+              "local": "ROTO CHILENO",
+              "visita": "ISLOTE SNIPE"
+            },
+            {
+              "local": "TRICOLOR DE CHENA",
+              "visita": "DEFENSOR LOS SAUCES"
+            },
+            {
+              "local": "ESTRELLA DE CARACAS",
+              "visita": "SAN MIGUEL"
+            },
+            {
+              "local": "JUVENTUD UNIDA",
+              "visita": "UNION LO HERRERA"
+            }
+          ]
+        },
+        {
+          "numero": 9,
+          "partidos": [
+            {
+              "local": "UNION LO HERRERA",
+              "visita": "HURACAN"
+            },
+            {
+              "local": "SAN MIGUEL",
+              "visita": "JUVENTUD UNIDA"
+            },
+            {
+              "local": "DEFENSOR LOS SAUCES",
+              "visita": "ESTRELLA DE CARACAS"
+            },
+            {
+              "local": "ISLOTE SNIPE",
+              "visita": "TRICOLOR DE CHENA"
+            },
+            {
+              "local": "LOS BAJOS",
+              "visita": "ROTO CHILENO"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "fechas": [
+        {
+          "numero": 1,
+          "partidos": [
+            {
+              "local": "UNION MUNICIPAL",
+              "visita": "ESTRELLA DEL PACIFICO"
+            },
+            {
+              "local": "SANTA INES",
+              "visita": "RENACER LO HERRERA"
+            },
+            {
+              "local": "AROMOS DE CHENA",
+              "visita": "JUAN SOTO"
+            },
+            {
+              "local": "ANTONIO ROMAN",
+              "visita": "LA PORTADA"
+            },
+            {
+              "local": "ROSA DEL SUR",
+              "visita": "SAN AGUSTIN"
+            }
+          ]
+        },
+        {
+          "numero": 2,
+          "partidos": [
+            {
+              "local": "ESTRELLA DEL PACIFICO",
+              "visita": "SAN AGUSTIN"
+            },
+            {
+              "local": "LA PORTADA",
+              "visita": "ROSA DEL SUR"
+            },
+            {
+              "local": "JUAN SOTO",
+              "visita": "ANTONIO ROMAN"
+            },
+            {
+              "local": "RENACER LO HERRERA",
+              "visita": "AROMOS DE CHENA"
+            },
+            {
+              "local": "UNION MUNICIPAL",
+              "visita": "SANTA INES"
+            }
+          ]
+        },
+        {
+          "numero": 3,
+          "partidos": [
+            {
+              "local": "SANTA INES",
+              "visita": "ESTRELLA DEL PACIFICO"
+            },
+            {
+              "local": "AROMOS DE CHENA",
+              "visita": "UNION MUNICIPAL"
+            },
+            {
+              "local": "ANTONIO ROMAN",
+              "visita": "RENACER LO HERRERA"
+            },
+            {
+              "local": "ROSA DEL SUR",
+              "visita": "JUAN SOTO"
+            },
+            {
+              "local": "SAN AGUSTIN",
+              "visita": "LA PORTADA"
+            }
+          ]
+        },
+        {
+          "numero": 4,
+          "partidos": [
+            {
+              "local": "ESTRELLA DEL PACIFICO",
+              "visita": "LA PORTADA"
+            },
+            {
+              "local": "JUAN SOTO",
+              "visita": "SAN AGUSTIN"
+            },
+            {
+              "local": "RENACER LO HERRERA",
+              "visita": "ROSA DEL SUR"
+            },
+            {
+              "local": "UNION MUNICIPAL",
+              "visita": "ANTONIO ROMAN"
+            },
+            {
+              "local": "SANTA INES",
+              "visita": "AROMOS DE CHENA"
+            }
+          ]
+        },
+        {
+          "numero": 5,
+          "partidos": [
+            {
+              "local": "AROMOS DE CHENA",
+              "visita": "ESTRELLA DEL PACIFICO"
+            },
+            {
+              "local": "ANTONIO ROMAN",
+              "visita": "SANTA INES"
+            },
+            {
+              "local": "ROSA DEL SUR",
+              "visita": "UNION MUNICIPAL"
+            },
+            {
+              "local": "SAN AGUSTIN",
+              "visita": "RENACER LO HERRERA"
+            },
+            {
+              "local": "LA PORTADA",
+              "visita": "JUAN SOTO"
+            }
+          ]
+        },
+        {
+          "numero": 6,
+          "partidos": [
+            {
+              "local": "ESTRELLA DEL PACIFICO",
+              "visita": "JUAN SOTO"
+            },
+            {
+              "local": "RENACER LO HERRERA",
+              "visita": "LA PORTADA"
+            },
+            {
+              "local": "UNION MUNICIPAL",
+              "visita": "SAN AGUSTIN"
+            },
+            {
+              "local": "SANTA INES",
+              "visita": "ROSA DEL SUR"
+            },
+            {
+              "local": "AROMOS DE CHENA",
+              "visita": "ANTONIO ROMAN"
+            }
+          ]
+        },
+        {
+          "numero": 7,
+          "partidos": [
+            {
+              "local": "ANTONIO ROMAN",
+              "visita": "ESTRELLA DEL PACIFICO"
+            },
+            {
+              "local": "ROSA DEL SUR",
+              "visita": "AROMOS DE CHENA"
+            },
+            {
+              "local": "SAN AGUSTIN",
+              "visita": "SANTA INES"
+            },
+            {
+              "local": "LA PORTADA",
+              "visita": "UNION MUNICIPAL"
+            },
+            {
+              "local": "JUAN SOTO",
+              "visita": "RENACER LO HERRERA"
+            }
+          ]
+        },
+        {
+          "numero": 8,
+          "partidos": [
+            {
+              "local": "ESTRELLA DEL PACIFICO",
+              "visita": "RENACER LO HERRERA"
+            },
+            {
+              "local": "UNION MUNICIPAL",
+              "visita": "JUAN SOTO"
+            },
+            {
+              "local": "SANTA INES",
+              "visita": "LA PORTADA"
+            },
+            {
+              "local": "AROMOS DE CHENA",
+              "visita": "SAN AGUSTIN"
+            },
+            {
+              "local": "ANTONIO ROMAN",
+              "visita": "ROSA DEL SUR"
+            }
+          ]
+        },
+        {
+          "numero": 9,
+          "partidos": [
+            {
+              "local": "ROSA DEL SUR",
+              "visita": "ESTRELLA DEL PACIFICO"
+            },
+            {
+              "local": "SAN AGUSTIN",
+              "visita": "ANTONIO ROMAN"
+            },
+            {
+              "local": "LA PORTADA",
+              "visita": "AROMOS DE CHENA"
+            },
+            {
+              "local": "JUAN SOTO",
+              "visita": "SANTA INES"
+            },
+            {
+              "local": "RENACER LO HERRERA",
+              "visita": "UNION MUNICIPAL"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
