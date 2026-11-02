@@ -31,7 +31,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 <main class="wrap">
  <div class="toolbar">
   <div class="field"><label for="season">TEMPORADA</label><select id="season"><option>2026</option><option>2027</option></select></div>
-  <div class="field"><label for="group">GRUPO</label><select id="group"><option value="A">Grupo A</option><option value="B">Grupo B</option></select></div><div class="field"><label for="round">FECHA</label><select id="round"></select></div><div class="field"><label for="category">CATEGORÍA</label><select id="category"><option>Dorados</option><option>Súper Senior</option><option>Senior</option><option>Tercera Infantil</option><option>Femenino</option><option>Segunda Infantil</option><option>Juvenil</option><option>Tercera Adulta</option><option>Segunda Adulta</option><option>Primera Adulta</option></select></div>
+  <div class="field"><label for="group">GRUPO</label><select id="group"><option value="A">Grupo A</option><option value="B">Grupo B</option></select></div><div class="field"><label for="round">FECHA</label><select id="round"></select></div><div class="field"><label for="category">CATEGORÍA</label><select id="category"><option value="general">Tabla general</option><option>Dorados</option><option>Súper Senior</option><option>Senior</option><option>Tercera Infantil</option><option>Femenino</option><option>Segunda Infantil</option><option>Juvenil</option><option>Tercera Adulta</option><option>Segunda Adulta</option><option>Primera Adulta</option></select></div>
   <span class="pill">Clausura 2026</span>
  </div>
  <div class="grid">
@@ -53,12 +53,12 @@ const category=$('category'),group=$('group'),round=$('round'),season=$('season'
 let fixture=null,results={},user=null;
 function isAdmin(){return user&&user.email===adminEmail&&user.emailVerified}
 function matchId(g,c,f,i){return ['clausura','2026',g,c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'' ).replace(/[^a-z0-9]+/g,'-'),f,i].join('_')}
-function updateRule(){$('points-rule').textContent=category.value==='Primera Adulta'?'Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.':'Esta categoría: 3 puntos por triunfo, 1 por empate y 0 por derrota.'}
+function updateRule(){$('points-rule').textContent=category.value==='general'?'La tabla general suma puntos, partidos y goles de todas las series.':category.value==='Primera Adulta'?'Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.':'Esta categoría: 3 puntos por triunfo, 1 por empate y 0 por derrota.'}
 function selectedMatches(){return fixture?.grupos.find(g=>g.id===group.value)?.fechas.find(f=>f.numero===Number(round.value))?.partidos||[]}
 function render(){
  updateRule();
  if(!fixture||season.value!=='2026'){out.textContent='No hay fixture disponible para esta temporada.';editor.replaceChildren();standings.textContent='Sin programación disponible.';return}
- const matches=selectedMatches();const table=document.createElement('table');table.innerHTML='<thead><tr><th>Local</th><th>Resultado</th><th>Visita</th></tr></thead>';
+ if(category.value==='general'){out.textContent='La tabla general reúne los resultados de todas las series. Selecciona una serie para ingresar goles por partido.';editor.replaceChildren();$('save-results').hidden=true;renderStandings();return} $('save-results').hidden=!isAdmin();const matches=selectedMatches();const table=document.createElement('table');table.innerHTML='<thead><tr><th>Local</th><th>Resultado</th><th>Visita</th></tr></thead>';
  const body=document.createElement('tbody');editor.replaceChildren();
  matches.forEach((p,i)=>{
   const id=matchId(group.value,category.value,round.value,i),r=results[id],tr=document.createElement('tr');
@@ -95,8 +95,7 @@ function renderStandings(){
   const total=general.get(t.name);for(const field of ['j','g','e','p','gf','gc','pts'])total[field]+=t[field];
  }
  const fragment=document.createDocumentFragment();
- fragment.append(makeTable('Tabla general · todas las series',[...general.values()]));
- for(const {serie,teams} of tables)fragment.append(makeTable('Tabla de la serie '+serie,teams));
+ if(category.value==='general'){fragment.append(makeTable('Tabla general · todas las series',[...general.values()]));}else{const selected=tables.find(t=>t.serie===category.value);if(selected)fragment.append(makeTable('Tabla de la serie '+selected.serie,selected.teams));}
  standings.replaceChildren(fragment);standings.className='';
 }
 for(const el of [category,group,round,season])el.addEventListener('change',render);
