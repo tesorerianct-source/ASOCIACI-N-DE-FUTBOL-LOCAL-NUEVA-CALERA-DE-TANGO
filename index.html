@@ -31,7 +31,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 <main class="wrap">
  <div class="toolbar">
   <div class="field"><label for="season">TEMPORADA</label><select id="season"><option>2026</option><option>2027</option></select></div>
-  <div class="field"><label for="group">GRUPO</label><select id="group"><option value="A">Grupo A</option><option value="B">Grupo B</option></select></div><div class="field"><label for="round">FECHA</label><select id="round"></select></div><div class="field"><label for="category">CATEGORÍA</label><select id="category"><option value="general">Tabla general</option><option>Dorados</option><option>Súper Senior</option><option>Senior</option><option>Tercera Infantil</option><option>Femenino</option><option>Segunda Infantil</option><option>Juvenil</option><option>Tercera Adulta</option><option>Segunda Adulta</option><option>Primera Adulta</option></select></div>
+  <div class="field"><label for="round">FECHA</label><select id="round"></select></div><div class="field"><label for="category">CATEGORÍA · BUSCAR</label><select id="category"><option value="todas">Todas las tablas</option><option value="general">Tabla general</option><option>Dorados</option><option>Súper Senior</option><option>Senior</option><option>Tercera Infantil</option><option>Femenino</option><option>Segunda Infantil</option><option>Juvenil</option><option>Tercera Adulta</option><option>Segunda Adulta</option><option>Primera Adulta</option></select></div>
   <span class="pill">Clausura 2026</span>
  </div>
  <div class="grid">
@@ -49,12 +49,12 @@ import {getFirestore,doc,getDoc,setDoc,collection,onSnapshot} from 'https://www.
 const app=initializeApp({apiKey:"AIzaSyBN0upeHSSumkUFvYEb9x9e0ti81nH9rSo",authDomain:"liga-nueva-calera-de-tango.firebaseapp.com",projectId:"liga-nueva-calera-de-tango",storageBucket:"liga-nueva-calera-de-tango.firebasestorage.app",messagingSenderId:"22682983108",appId:"1:22682983108:web:cb7b03b840977999164791"});
 const auth=getAuth(app),db=getFirestore(app),adminEmail='tesoreria.nct@gmail.com';
 const $=id=>document.getElementById(id);
-const category=$('category'),group=$('group'),round=$('round'),season=$('season'),out=$('fixture-content'),editor=$('editor'),status=$('save-status'),standings=$('standings');
+const category=$('category'),round=$('round'),season=$('season'),out=$('fixture-content'),editor=$('editor'),status=$('save-status'),standings=$('standings');
 let fixture=null,results={},user=null;
 function isAdmin(){return user&&user.email===adminEmail&&user.emailVerified}
 function matchId(g,c,f,i){return ['clausura','2026',g,c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'' ).replace(/[^a-z0-9]+/g,'-'),f,i].join('_')}
 function updateRule(){$('points-rule').textContent=category.value==='general'?'La tabla general suma puntos, partidos y goles de todas las series.':category.value==='Primera Adulta'?'Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.':'Esta categoría: 3 puntos por triunfo, 1 por empate y 0 por derrota.'}
-function selectedMatches(){return fixture?.grupos.find(g=>g.id===group.value)?.fechas.find(f=>f.numero===Number(round.value))?.partidos||[]}
+function selectedMatches(grupo){return fixture?.grupos.find(g=>g.id===grupo)?.fechas.find(f=>f.numero===Number(round.value))?.partidos||[]}
 function bonusId(g,f,i,side){return ['bonificacion','2026',g,f,i,side].join('_')}
 function renderEditor(){
  editor.replaceChildren();
@@ -88,10 +88,15 @@ function render(){
  $('save-results').hidden=!isAdmin();
  if(category.value==='general'){out.textContent='La tabla general reúne todas las series, excepto Tercera Infantil, más las bonificaciones.'}
  else{
-  const matches=selectedMatches(),table=document.createElement('table');table.innerHTML='<thead><tr><th>Local</th><th>Resultado</th><th>Visita</th></tr></thead>';
-  const body=document.createElement('tbody');
-  matches.forEach((p,i)=>{const r=results[matchId(group.value,category.value,round.value,i)],tr=document.createElement('tr');[p.local,r?r.local+' - '+r.visita:'Pendiente',p.visita].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});body.append(tr)});
-  table.append(body);out.replaceChildren(table);
+  const wrap=document.createDocumentFragment();
+  for(const grupo of ['A','B']){
+   const heading=document.createElement('h3');heading.textContent='Grupo '+grupo+' · Fecha '+round.value;wrap.append(heading);
+   const table=document.createElement('table');table.innerHTML='<thead><tr><th>Local</th><th>Resultado</th><th>Visita</th></tr></thead>';
+   const body=document.createElement('tbody');
+   selectedMatches(grupo).forEach((p,i)=>{const r=category.value==='todas'?null:results[matchId(grupo,category.value,round.value,i)],tr=document.createElement('tr');[p.local,r?r.local+' - '+r.visita:category.value==='todas'?'Selecciona una serie':'Pendiente',p.visita].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});body.append(tr)});
+   table.append(body);wrap.append(table);
+  }
+  out.replaceChildren(wrap);
  }
  renderEditor();renderStandings();
 }
@@ -121,7 +126,7 @@ function renderStandings(){
  for(const serie of SERIES){
   for(const grupo of ['A','B']){
    const teams=calculateStandings(serie,grupo);
-   fragment.append(makeTable('Tabla de la serie '+serie+' · Grupo '+grupo+' · Clausura 2026',teams));
+   if(category.value==='todas'||category.value===serie)fragment.append(makeTable('Tabla de la serie '+serie+' · Grupo '+grupo+' · Clausura 2026',teams));
    if(serie==='Tercera Infantil')continue;
    for(const t of teams){
     if(!general.has(t.name))general.set(t.name,{name:t.name,j:0,g:0,e:0,p:0,gf:0,gc:0,pts:0});
@@ -131,10 +136,10 @@ function renderStandings(){
   }
  }
  for(const grupo of ['A','B']){const fechas=fixture?.grupos.find(g=>g.id===grupo)?.fechas||[];for(const fecha of fechas)fecha.partidos.forEach((p,i)=>{[p.local,p.visita].forEach((club,side)=>{const r=results[bonusId(grupo,fecha.numero,i,side)];if(r&&general.has(club)){const t=general.get(club);t.bonus=(t.bonus||0)+r.local}})})}
- fragment.append(makeTable('TABLA GENERAL · 20 CLUBES · CLAUSURA 2026',[...general.values()],true));
+ if(category.value==='todas'||category.value==='general')fragment.append(makeTable('TABLA GENERAL · 20 CLUBES · CLAUSURA 2026',[...general.values()],true));
  standings.replaceChildren(fragment);standings.className='';
 }
-for(const el of [category,group,round,season])el.addEventListener('change',render);
+for(const el of [category,round,season])el.addEventListener('change',render);
 $('login-button').addEventListener('click',async()=>{status.textContent='Verificando acceso…';try{await signInWithEmailAndPassword(auth,adminEmail,$('admin-password').value);$('admin-password').value='';status.textContent='Sesión iniciada.'}catch(e){status.textContent='No se pudo iniciar sesión. Revisa la contraseña y vuelve a intentarlo.'}});
 $('logout-button').addEventListener('click',()=>signOut(auth));
 $('verify-button').addEventListener('click',async()=>{try{await sendEmailVerification(auth.currentUser);status.textContent='Te enviamos un enlace de verificación. Ábrelo desde tu correo y vuelve a iniciar sesión.'}catch(e){status.textContent='No se pudo enviar el enlace de verificación.'}});
