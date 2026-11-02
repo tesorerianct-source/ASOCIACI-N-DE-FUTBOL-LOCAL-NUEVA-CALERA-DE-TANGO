@@ -97,7 +97,7 @@ function renderEditor(){
    const tr=document.createElement('tr'),name=document.createElement('td');name.textContent=club;tr.append(name);
    SERIES.forEach(serie=>{
     const td=document.createElement('td'),input=document.createElement('input'),r=results[matchId(grupo,serie,round.value,i)];
-    input.type='number';input.min='0';input.step='1';input.placeholder='—';input.value=r?(side?r.visita:r.local):'';
+    input.type='number';input.min='0';input.step='1';input.placeholder='0';input.value=r?(side?r.visita:r.local):'';
     input.dataset.grupo=grupo;input.dataset.match=i;input.dataset.side=side;input.dataset.serie=serie;td.append(input);tr.append(td);
    });
    const td=document.createElement('td'),input=document.createElement('input'),r=results[bonusId(grupo,round.value,i,side)];
