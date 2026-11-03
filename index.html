@@ -97,7 +97,7 @@ function renderEditor(){
    const tr=document.createElement('tr'),name=document.createElement('td');name.textContent=club;tr.append(name);
    SERIES.forEach(serie=>{
     const td=document.createElement('td'),input=document.createElement('input'),r=results[matchId(grupo,serie,round.value,i)];
-    input.type='number';input.min='0';input.step='1';input.placeholder='0';input.value=r?(side?r.visita:r.local):'';
+    input.type='number';input.min='0';input.step='1';input.placeholder='0';input.value=r&&!r.sinPuntos?(side?r.visita:r.local):'';
     input.dataset.grupo=grupo;input.dataset.match=i;input.dataset.side=side;input.dataset.serie=serie;td.append(input);tr.append(td);
    });
    const td=document.createElement('td'),input=document.createElement('input'),r=results[bonusId(grupo,round.value,i,side)];
@@ -159,7 +159,7 @@ function calculateStandings(serie,grupo){
  for(const fecha of fechas.filter(f=>f.numero<=fechaLimite))fecha.partidos.forEach((p,i)=>{
   for(const name of [p.local,p.visita])if(!teams.has(name))teams.set(name,{name,j:0,g:0,e:0,p:0,gf:0,gc:0,pts:0});
   const r=results[matchId(grupo,serie,fecha.numero,i)];if(!r)return;
-  const a=teams.get(p.local),b=teams.get(p.visita);a.j++;b.j++;a.gf+=r.local;a.gc+=r.visita;b.gf+=r.visita;b.gc+=r.local;
+  const a=teams.get(p.local),b=teams.get(p.visita);a.j++;b.j++;if(r.sinPuntos)return;a.gf+=r.local;a.gc+=r.visita;b.gf+=r.visita;b.gc+=r.local;
   if(r.local>r.visita){a.g++;b.p++;a.pts+=serie==='Primera Adulta'?4:3}
   else if(r.local<r.visita){b.g++;a.p++;b.pts+=serie==='Primera Adulta'?4:3}
   else{a.e++;b.e++;a.pts+=serie==='Primera Adulta'?2:1;b.pts+=serie==='Primera Adulta'?2:1}
@@ -223,7 +223,7 @@ $('save-results').addEventListener('click',async()=>{
    const pair=inputs.filter(x=>x.dataset.grupo===grupo&&x.dataset.match===String(i)&&x.dataset.serie===serie);
    if(pair.length!==2)continue;
    const a=pair[0].value.trim(),b=pair[1].value.trim();
-   if(a===''&&b==='')continue;
+   if(a===''&&b===''){writes.push({id:matchId(grupo,serie,round.value,i),sinPuntos:true});continue;}
    if(!/^\d+$/.test(a)||!/^\d+$/.test(b)){const partido=matches[i];status.textContent='Resultado incompleto en Grupo '+grupo+', partido '+(i+1)+' ('+partido.local+' vs '+partido.visita+'), serie '+serie+'. Escribe los goles de ambos clubes, incluido 0 si corresponde.';pair.find(x=>!/^\d+$/.test(x.value.trim()))?.focus();return}
    writes.push({id:matchId(grupo,serie,round.value,i),local:Number(a),visita:Number(b)});
   }
@@ -236,9 +236,9 @@ $('save-results').addEventListener('click',async()=>{
   }
  }
  }
- if(!writes.length){status.textContent='No hay goles ingresados. Para dejar la fecha registrada como pendiente, presiona «Guardar fecha sin resultados».';return}
- status.textContent='Guardando resultados y bonificaciones…';
- try{await Promise.all(writes.map(r=>setDoc(doc(db,'resultados',r.id),{local:r.local,visita:r.visita})));status.textContent='Resultados y bonificaciones guardados correctamente.'}
+ if(!writes.length){status.textContent='No se encontraron partidos para guardar.';return}
+ status.textContent='Guardando resultados y partidos jugados sin puntos…';
+ try{await Promise.all(writes.map(r=>setDoc(doc(db,'resultados',r.id),r.sinPuntos?{sinPuntos:true}:{local:r.local,visita:r.visita})));status.textContent='Resultados, bonificaciones y partidos jugados sin puntos guardados correctamente.'}
  catch(e){status.textContent='Error al guardar. Comprueba la conexión y los permisos de Firebase.'}
 });
 $('save-pending').addEventListener('click',async()=>{
@@ -251,7 +251,7 @@ $('save-pending').addEventListener('click',async()=>{
   status.textContent='Fecha '+fecha+' guardada como pendiente. No se asignaron goles ni puntos y no se modificaron resultados existentes.';
  }catch(e){status.textContent='No se pudo guardar la fecha pendiente. Revisa la conexión y los permisos.'}
 });
-onSnapshot(collection(db,'resultados'),snapshot=>{results={};snapshot.forEach(d=>{const v=d.data();if(Number.isInteger(v.local)&&Number.isInteger(v.visita)&&v.local>=0&&v.visita>=0)results[d.id]=v});render()},()=>{status.textContent='No se pudo consultar la base de datos. Comprueba la conexión y los permisos.'});
+onSnapshot(collection(db,'resultados'),snapshot=>{results={};snapshot.forEach(d=>{const v=d.data();if(v.sinPuntos===true||(Number.isInteger(v.local)&&Number.isInteger(v.visita)&&v.local>=0&&v.visita>=0))results[d.id]=v});render()},()=>{status.textContent='No se pudo consultar la base de datos. Comprueba la conexión y los permisos.'});
 fetch('data/fixture-clausura-2026.json').then(r=>r.json()).then(data=>{fixture=data;round.replaceChildren();for(let i=1;i<=9;i++){const o=document.createElement('option');o.value=i;o.textContent='Fecha '+i;round.append(o)}render()}).catch(()=>{out.textContent='No se pudo cargar el fixture.'});
 </script>
 </body></html>
