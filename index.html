@@ -158,8 +158,10 @@ function calculateStandings(serie,grupo){
  const teams=new Map(),fechas=fixture?.grupos.find(g=>g.id===grupo)?.fechas||[],fechaLimite=Number(round.value);
  for(const fecha of fechas.filter(f=>f.numero<=fechaLimite))fecha.partidos.forEach((p,i)=>{
   for(const name of [p.local,p.visita])if(!teams.has(name))teams.set(name,{name,j:0,g:0,e:0,p:0,gf:0,gc:0,pts:0});
-  const r=results[matchId(grupo,serie,fecha.numero,i)];if(!r)return;
-  const a=teams.get(p.local),b=teams.get(p.visita);a.j++;b.j++;if(r.sinPuntos)return;a.gf+=r.local;a.gc+=r.visita;b.gf+=r.visita;b.gc+=r.local;
+  const r=results[matchId(grupo,serie,fecha.numero,i)];
+  const fechaOficial=results['oficial_2026_'+grupo+'_'+fecha.numero]||fecha.partidos.some((partido,k)=>SERIES.some(c=>results[matchId(grupo,c,fecha.numero,k)]));
+  if(!r&&!fechaOficial)return;
+  const a=teams.get(p.local),b=teams.get(p.visita);a.j++;b.j++;if(!r||r.sinPuntos)return;a.gf+=r.local;a.gc+=r.visita;b.gf+=r.visita;b.gc+=r.local;
   if(r.local>r.visita){a.g++;b.p++;a.pts+=serie==='Primera Adulta'?4:3}
   else if(r.local<r.visita){b.g++;a.p++;b.pts+=serie==='Primera Adulta'?4:3}
   else{a.e++;b.e++;a.pts+=serie==='Primera Adulta'?2:1;b.pts+=serie==='Primera Adulta'?2:1}
@@ -251,7 +253,7 @@ $('save-results').addEventListener('click',async()=>{
  }
  if(!writes.length){status.textContent='No se encontraron partidos para guardar.';return}
  status.textContent='Guardando resultados y partidos jugados sin puntos…';
- try{await Promise.all(writes.map(r=>setDoc(doc(db,'resultados',r.id),r.sinPuntos?{sinPuntos:true}:{local:r.local,visita:r.visita})));status.textContent='Resultados, bonificaciones y partidos jugados sin puntos guardados correctamente.'}
+ try{await Promise.all([...writes.map(r=>setDoc(doc(db,'resultados',r.id),r.sinPuntos?{sinPuntos:true}:{local:r.local,visita:r.visita})),...['A','B'].map(grupo=>setDoc(doc(db,'resultados','oficial_2026_'+grupo+'_'+round.value),{oficial:true,fecha:Number(round.value),grupo}))]);status.textContent='Resultados, bonificaciones y partidos jugados sin puntos guardados correctamente.'}
  catch(e){status.textContent='Error al guardar. Comprueba la conexión y los permisos de Firebase.'}
 });
 $('save-pending').addEventListener('click',async()=>{
@@ -264,7 +266,7 @@ $('save-pending').addEventListener('click',async()=>{
   status.textContent='Fecha '+fecha+' guardada como pendiente. No se asignaron goles ni puntos y no se modificaron resultados existentes.';
  }catch(e){status.textContent='No se pudo guardar la fecha pendiente. Revisa la conexión y los permisos.'}
 });
-onSnapshot(collection(db,'resultados'),snapshot=>{results={};snapshot.forEach(d=>{const v=d.data();if(v.sinPuntos===true||(Number.isInteger(v.local)&&Number.isInteger(v.visita)&&v.local>=0&&v.visita>=0))results[d.id]=v});render()},()=>{status.textContent='No se pudo consultar la base de datos. Comprueba la conexión y los permisos.'});
+onSnapshot(collection(db,'resultados'),snapshot=>{results={};snapshot.forEach(d=>{const v=d.data();if(v.oficial===true||v.sinPuntos===true||(Number.isInteger(v.local)&&Number.isInteger(v.visita)&&v.local>=0&&v.visita>=0))results[d.id]=v});render()},()=>{status.textContent='No se pudo consultar la base de datos. Comprueba la conexión y los permisos.'});
 fetch('data/fixture-clausura-2026.json').then(r=>r.json()).then(data=>{fixture=data;round.replaceChildren();for(let i=1;i<=9;i++){const o=document.createElement('option');o.value=i;o.textContent='Fecha '+i;round.append(o)}render()}).catch(()=>{out.textContent='No se pudo cargar el fixture.'});
 </script>
 </body></html>
