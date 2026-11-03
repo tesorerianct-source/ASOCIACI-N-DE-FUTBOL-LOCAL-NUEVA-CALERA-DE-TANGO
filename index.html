@@ -50,7 +50,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
   <section class="card full view-section" id="admin" hidden><h2>🔐 Administración</h2><div id="login-box"><p>Solo la tesorería puede modificar los resultados oficiales.</p><label for="admin-email">Correo administrador</label><input id="admin-email" type="email" autocomplete="username" value="tesoreria.nct@gmail.com" readonly style="width:100%"><label for="admin-password">Contraseña</label><input id="admin-password" type="password" autocomplete="current-password" style="width:100%"><button id="login-button" type="button">Ingresar</button></div><div id="admin-panel" hidden><p id="admin-user"></p><button id="verify-button" type="button" hidden>Enviar correo de verificación</button><button id="logout-button" type="button">Cerrar sesión</button><p>Selecciona la fecha. Aquí aparecen juntos el Grupo A y el Grupo B para ingresar los goles y las bonificaciones. Las casillas vacías quedan pendientes.</p><div id="editor"></div><button id="save-results" type="button">Guardar resultados oficiales</button> <button id="save-pending" type="button" style="background:#526a7e;margin-top:8px">Guardar fecha sin resultados</button></div><p id="save-status" class="muted" role="status"></p></section>
   <section class="card full view-section" id="posiciones"><h2>🏆 Tabla de posiciones</h2><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
   <section class="card full view-section" id="goleadores" hidden><h2>⚽ Tabla de goleadores</h2><div class="empty">Los goleadores se publicarán cuando se habilite el registro de anotaciones por partido.</div></section>
-  <section class="card full view-section" id="multas" hidden><h2>📋 Registro de multas por club</h2><p class="muted">Selecciona un club para consultar sus multas, abonos, saldos y estados de pago.</p><div class="field" style="max-width:450px;margin-bottom:16px"><label for="club-multas">CARPETA DEL CLUB</label><select id="club-multas"></select></div><div id="multas-form" class="notice" hidden><h3 style="margin-top:0">Registrar nueva multa</h3><div class="toolbar"><div class="field"><label for="multa-fecha">Fecha</label><input id="multa-fecha" type="date"></div><div class="field"><label for="multa-vencimiento">Vencimiento</label><input id="multa-vencimiento" type="date"></div><div class="field"><label for="multa-detalle">Detalle de la multa</label><input id="multa-detalle" type="text" maxlength="250" placeholder="Motivo de la multa"></div><div class="field"><label for="multa-monto">Monto ($)</label><input id="multa-monto" type="number" min="0" step="1" placeholder="10000"></div><div class="field"><label for="multa-abonado">Monto abonado ($)</label><input id="multa-abonado" type="number" min="0" step="1" value="0"></div></div><button id="guardar-multa" type="button">Guardar multa</button></div><p id="multas-estado" role="status" class="muted"></p><div id="multas-listado"></div></section>
+  <section class="card full view-section" id="multas" hidden><h2>📋 Registro de multas por club</h2><p class="muted">Selecciona un club para consultar sus multas, abonos, saldos y estados de pago.</p><div class="field" style="max-width:450px;margin-bottom:16px"><label for="club-multas">CARPETA DEL CLUB</label><select id="club-multas"></select></div><div id="multas-form" class="notice" hidden><h3 style="margin-top:0">Registrar nueva multa</h3><div class="toolbar"><div class="field"><label for="multa-fecha">Fecha</label><input id="multa-fecha" type="date"></div><div class="field"><label for="multa-vencimiento">Vencimiento</label><input id="multa-vencimiento" type="date"></div><div class="field"><label for="multa-detalle">Detalle de la multa</label><input id="multa-detalle" type="text" maxlength="250" placeholder="Motivo de la multa"></div><div class="field"><label for="multa-monto">Monto ($)</label><input id="multa-monto" type="number" min="0" step="1" placeholder="10000"></div><div class="field"><label for="multa-abonado">Monto abonado ($)</label><input id="multa-abonado" type="number" min="0" step="1" value="0"></div><div class="field"><label for="multa-pago">Fecha de pago (si está pagada)</label><input id="multa-pago" type="date"></div></div><button id="guardar-multa" type="button">Guardar multa</button></div><p id="multas-estado" role="status" class="muted"></p><div id="multas-listado"></div></section>
   <section class="card full view-section" id="castigos" hidden><h2>🟥 Castigos</h2><p class="muted">Los castigos oficiales todavía no han sido cargados. Se publicarán aquí cuando la Asociación registre la información.</p></section>
  </div>
  </div>
@@ -101,6 +101,11 @@ function renderMultas(){
   const estado=m.abonado>=m.monto?'Pagado':m.abonado>0?'Abono parcial':'Pendiente';
   for(const value of [m.fecha,m.vencimiento,m.detalle,formatoCLP(m.monto),formatoCLP(m.abonado),formatoCLP(saldo),estado]){const td=document.createElement('td');td.textContent=value;tr.append(td)}
   const actions=document.createElement('td');
+  if(estado==='Pagado'){
+   const receipt=document.createElement('button');receipt.type='button';receipt.textContent='Emitir comprobante';receipt.style.cssText='padding:6px 10px;background:#176c4b;margin:3px';
+   receipt.addEventListener('click',()=>emitirComprobanteMulta(id,m));
+   actions.append(receipt);
+  }
   if(isAdmin()){
    const edit=document.createElement('button');edit.type='button';edit.textContent='Editar';edit.style.padding='6px 10px';
    edit.addEventListener('click',()=>{
@@ -108,8 +113,15 @@ function renderMultas(){
     if(nuevo===null)return;
     const numero=Number(nuevo);
     if(!Number.isInteger(numero)||numero<0||numero>m.monto){$('multas-estado').textContent='El abono debe ser un número entre 0 y el monto de la multa.';return}
+    let fechaPago=m.fechaPago||'';
+    if(numero===m.monto){
+     const ingresada=prompt('Fecha de pago efectivo (AAAA-MM-DD):',fechaPago||new Date().toLocaleDateString('en-CA'));
+     if(ingresada===null)return;
+     if(!/^\d{4}-\d{2}-\d{2}$/.test(ingresada)||Number.isNaN(Date.parse(ingresada))){$('multas-estado').textContent='Ingresa una fecha válida en formato AAAA-MM-DD.';return}
+     fechaPago=ingresada;
+    }else fechaPago='';
     $('multas-estado').textContent='Actualizando abono…';
-    setDoc(doc(db,'resultados',id),{...m,abonado:numero,local:0,visita:0}).then(()=>$('multas-estado').textContent='Abono actualizado correctamente.').catch(()=>$('multas-estado').textContent='No se pudo actualizar el abono.');
+    setDoc(doc(db,'resultados',id),{...m,abonado:numero,fechaPago,local:0,visita:0}).then(()=>$('multas-estado').textContent='Abono actualizado correctamente.').catch(()=>$('multas-estado').textContent='No se pudo actualizar el abono.');
    });actions.append(edit);
   }else{actions.textContent='—'}
   tr.append(actions);tbody.append(tr);
@@ -117,16 +129,26 @@ function renderMultas(){
  table.append(tbody);scroll.append(table);list.append(scroll);
  const summary=document.createElement('p');summary.style.fontWeight='bold';summary.textContent='Total multas: '+formatoCLP(total)+' · Total abonado: '+formatoCLP(abonadoTotal)+' · Saldo pendiente: '+formatoCLP(total-abonadoTotal);list.append(summary);
 }
+function emitirComprobanteMulta(id,m){
+ if(m.abonado<m.monto)return;
+ if(!m.fechaPago){$('multas-estado').textContent='Falta registrar la fecha de pago. Ingresa a Administración, selecciona Editar e indica la fecha real de pago.';return}
+ const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const fecha=value=>{const parts=value.split('-');return parts.length===3?parts[2]+'/'+parts[1]+'/'+parts[0]:value};
+ const ventana=window.open('','_blank');
+ if(!ventana){$('multas-estado').textContent='Permite las ventanas emergentes para emitir el comprobante.';return}
+ const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Comprobante de pago - '+safe(m.club)+'</title><style>body{font-family:Arial,sans-serif;color:#173047;max-width:740px;margin:38px auto;padding:20px}.head{display:flex;align-items:center;gap:18px;border-bottom:4px solid #1769aa;padding-bottom:18px}.escudo{border:3px solid #1769aa;border-radius:50%;width:82px;height:82px;display:grid;place-items:center;font-size:42px}h1{font-size:23px;margin:0}h2{text-align:center;margin:34px 0}.row{padding:14px 0;border-bottom:1px solid #ddd;display:flex;gap:20px}.row strong{width:170px;flex-shrink:0}.pagado{text-align:center;font-weight:800;color:#176c4b;border:2px solid #176c4b;padding:12px;margin-top:25px}.nota{font-size:12px;color:#647789;margin-top:32px}.print{margin-top:20px;padding:12px 20px;background:#1769aa;color:white;border:0;border-radius:7px;cursor:pointer}@media print{.print{display:none}body{margin:10px auto}}</style></head><body><div class="head"><div class="escudo">⚽</div><div><h1>ASOCIACIÓN DE FÚTBOL LOCAL<br>NUEVA CALERA DE TANGO</h1><div>Comprobante de pago de multa</div></div></div><h2>COMPROBANTE DE PAGO</h2><div class="row"><strong>Club:</strong><span>'+safe(m.club)+'</span></div><div class="row"><strong>Detalle:</strong><span>'+safe(m.detalle)+'</span></div><div class="row"><strong>Monto pagado:</strong><span>'+safe(formatoCLP(m.abonado))+'</span></div><div class="row"><strong>Fecha de pago:</strong><span>'+safe(fecha(m.fechaPago))+'</span></div><div class="row"><strong>Fecha de multa:</strong><span>'+safe(fecha(m.fecha))+'</span></div><div class="pagado">PAGADO EN SU TOTALIDAD</div><p class="nota">Comprobante generado desde el registro de multas de la Asociación. Identificador: '+safe(id)+'. El escudo ilustrativo será reemplazado por el logo oficial cuando esté disponible.</p><button class="print" onclick="window.print()">Imprimir / Guardar como PDF</button></body></html>';
+ ventana.document.open();ventana.document.write(html);ventana.document.close();
+}
 selectorMultas.addEventListener('change',renderMultas);
 $('guardar-multa').addEventListener('click',async()=>{
  if(!isAdmin())return;
  const fecha=$('multa-fecha').value,vencimiento=$('multa-vencimiento').value,detalle=$('multa-detalle').value.trim();
- const monto=Number($('multa-monto').value),abonado=Number($('multa-abonado').value);
- if(!fecha||!vencimiento||!detalle||$('multa-monto').value.trim()===''||!Number.isInteger(monto)||monto<=0||!Number.isInteger(abonado)||abonado<0||abonado>monto){$('multas-estado').textContent='Completa fecha, vencimiento, detalle y montos válidos. El abono no puede superar la multa.';return}
+ const monto=Number($('multa-monto').value),abonado=Number($('multa-abonado').value),fechaPago=$('multa-pago').value;
+ if(!fecha||!vencimiento||!detalle||$('multa-monto').value.trim()===''||!Number.isInteger(monto)||monto<=0||!Number.isInteger(abonado)||abonado<0||abonado>monto||(abonado===monto&&!fechaPago)){$('multas-estado').textContent='Completa fecha, vencimiento, detalle y montos válidos. Si la multa está pagada, indica la fecha de pago.';return}
  const id='multa_2026_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
- const data={tipo:'multa',club:selectorMultas.value,fecha,vencimiento,detalle,monto,abonado,local:0,visita:0};
+ const data={tipo:'multa',club:selectorMultas.value,fecha,vencimiento,detalle,monto,abonado,fechaPago:abonado===monto?fechaPago:'',local:0,visita:0};
  $('multas-estado').textContent='Guardando multa…';
- try{await setDoc(doc(db,'resultados',id),data);$('multa-detalle').value='';$('multa-monto').value='';$('multa-abonado').value='0';$('multas-estado').textContent='Multa guardada correctamente.'}catch(e){$('multas-estado').textContent='No se pudo guardar la multa. Revisa los permisos de Firebase.'}
+ try{await setDoc(doc(db,'resultados',id),data);$('multa-detalle').value='';$('multa-monto').value='';$('multa-abonado').value='0';$('multa-pago').value='';$('multas-estado').textContent='Multa guardada correctamente.'}catch(e){$('multas-estado').textContent='No se pudo guardar la multa. Revisa los permisos de Firebase.'}
 });
 
 function matchId(g,c,f,i){return ['clausura','2026',g,c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'' ).replace(/[^a-z0-9]+/g,'-'),f,i].join('_')}
