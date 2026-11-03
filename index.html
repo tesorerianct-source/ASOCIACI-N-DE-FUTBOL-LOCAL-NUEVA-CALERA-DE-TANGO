@@ -177,13 +177,13 @@ const SALDO_CAMPEONATO_ANTERIOR=[["ROTO CHILENO",190,123,24,43,374,23,25,422],["
 function tablaGeneralActualizada(general){
  const container=document.createElement('section');
  const title=document.createElement('h3');title.textContent='TABLA GENERAL · SALDO ANTERIOR + CLAUSURA 2026 HASTA FECHA '+round.value+' · 20 CLUBES';title.style.cssText='background:#72a942;color:#111;text-align:center;padding:9px;margin:12px 0 0';container.append(title);
- const explanation=document.createElement('p');explanation.className='muted';explanation.textContent='Acumula el saldo anterior y los resultados oficiales del Clausura 2026. Tercera Infantil no suma. F.A corresponde al saldo histórico informado.';container.append(explanation);
+ const explanation=document.createElement('p');explanation.className='muted';explanation.textContent='Acumula el saldo anterior y los resultados oficiales del Clausura 2026. Tercera Infantil no suma. F.A acumula los puntos hasta la fecha anterior; PTS. muestra solo los puntos de la fecha seleccionada.';container.append(explanation);
  const table=document.createElement('table');table.innerHTML='<thead><tr><th>Pos</th><th>Equipo</th><th>J</th><th>G</th><th>E</th><th>P</th><th>F.A</th><th>PTS.</th><th>Bonif.</th><th>TOTAL</th></tr></thead>';
  const body=document.createElement('tbody');
  const rows=SALDO_CAMPEONATO_ANTERIOR.map(values=>{
   const [name,j,g,e,p,fa,pts,bonus,total]=values;
-  const current=general.get(name)||{j:0,g:0,e:0,p:0,pts:0,bonus:0};
-  return {name,j:j+current.j,g:g+current.g,e:e+current.e,p:p+current.p,fa,pts:pts+current.pts,bonus:bonus+(current.bonus||0),total:total+current.pts+(current.bonus||0)};
+  const current=general.get(name)||{j:0,g:0,e:0,p:0,pts:0,ptsFecha:0,bonus:0};
+  return {name,j:j+current.j,g:g+current.g,e:e+current.e,p:p+current.p,fa:fa+pts+current.pts-(current.ptsFecha||0),pts:current.ptsFecha||0,bonus:bonus+(current.bonus||0),total:total+current.pts+(current.bonus||0)};
  }).sort((a,b)=>b.total-a.total||b.pts-a.pts||a.name.localeCompare(b.name));
  rows.forEach((t,i)=>{const tr=document.createElement('tr');[i+1,t.name,t.j,t.g,t.e,t.p,t.fa,t.pts,t.bonus,t.total].forEach((value,j)=>{const td=document.createElement('td');td.textContent=value;if(j===9)td.style.fontWeight='bold';tr.append(td)});body.append(tr)});
  table.append(body);container.append(table);return container;
@@ -203,7 +203,21 @@ function renderStandings(){
    }
   }
  }
- for(const grupo of ['A','B']){const fechas=fixture?.grupos.find(g=>g.id===grupo)?.fechas||[];for(const fecha of fechas.filter(f=>f.numero<=fechaLimite))fecha.partidos.forEach((p,i)=>{[p.local,p.visita].forEach((club,side)=>{const r=results[bonusId(grupo,fecha.numero,i,side)];if(r&&general.has(club)){const t=general.get(club);t.bonus=(t.bonus||0)+r.local}})})}
+ for(const grupo of ['A','B']){
+ const fecha=fixture?.grupos.find(g=>g.id===grupo)?.fechas.find(f=>f.numero===fechaLimite);
+ if(fecha)fecha.partidos.forEach((p,i)=>{
+  for(const serie of SERIES){
+   if(serie==='Tercera Infantil')continue;
+   const r=results[matchId(grupo,serie,fechaLimite,i)];
+   if(!r||r.sinPuntos)continue;
+   for(const [club,a,b] of [[p.local,r.local,r.visita],[p.visita,r.visita,r.local]]){
+    const t=general.get(club);if(!t)continue;
+    t.ptsFecha=(t.ptsFecha||0)+(a>b?(serie==='Primera Adulta'?4:3):a===b?(serie==='Primera Adulta'?2:1):0);
+   }
+  }
+ });
+}
+for(const grupo of ['A','B']){const fechas=fixture?.grupos.find(g=>g.id===grupo)?.fechas||[];for(const fecha of fechas.filter(f=>f.numero<=fechaLimite))fecha.partidos.forEach((p,i)=>{[p.local,p.visita].forEach((club,side)=>{const r=results[bonusId(grupo,fecha.numero,i,side)];if(r&&general.has(club)){const t=general.get(club);t.bonus=(t.bonus||0)+r.local}})})}
  if(category.value==='todas'||category.value==='general')fragment.append(tablaGeneralActualizada(general));
  standings.replaceChildren(fragment);standings.className='';
 }
