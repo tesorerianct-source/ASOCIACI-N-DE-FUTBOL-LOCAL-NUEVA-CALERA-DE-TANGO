@@ -60,7 +60,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendEmailVerification} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {getFirestore,doc,getDoc,setDoc,collection,onSnapshot} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {getFirestore,doc,getDoc,setDoc,collection,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 const app=initializeApp({apiKey:"AIzaSyBN0upeHSSumkUFvYEb9x9e0ti81nH9rSo",authDomain:"liga-nueva-calera-de-tango.firebaseapp.com",projectId:"liga-nueva-calera-de-tango",storageBucket:"liga-nueva-calera-de-tango.firebasestorage.app",messagingSenderId:"22682983108",appId:"1:22682983108:web:cb7b03b840977999164791"});
 const auth=getAuth(app),db=getFirestore(app),adminEmail='tesoreria.nct@gmail.com';
 function showView(view){
@@ -129,14 +129,35 @@ function renderMultas(){
  table.append(tbody);scroll.append(table);list.append(scroll);
  const summary=document.createElement('p');summary.style.fontWeight='bold';summary.textContent='Total multas: '+formatoCLP(total)+' · Total abonado: '+formatoCLP(abonadoTotal)+' · Saldo pendiente: '+formatoCLP(total-abonadoTotal);list.append(summary);
 }
-function emitirComprobanteMulta(id,m){
+async function emitirComprobanteMulta(id,m){
  if(m.abonado<m.monto)return;
  if(!m.fechaPago){$('multas-estado').textContent='Primero registra la fecha real de pago mediante Editar.';return}
+ let folio=m.folio;
+ if(!Number.isInteger(folio)||folio<1){
+  if(!isAdmin()){$('multas-estado').textContent='Este comprobante todavía no tiene folio. Solicita a Tesorería que lo emita por primera vez.';return}
+  $('multas-estado').textContent='Asignando folio correlativo…';
+  try{
+   folio=await runTransaction(db,async transaction=>{
+    const multaRef=doc(db,'resultados',id),contadorRef=doc(db,'resultados','contador_folios_multas');
+    const multaSnap=await transaction.get(multaRef);
+    const contadorSnap=await transaction.get(contadorRef);
+    if(!multaSnap.exists())throw Error('Multa no encontrada');
+    const registro=multaSnap.data();
+    if(registro.folio&&Number.isInteger(registro.folio))return registro.folio;
+    if(registro.abonado<registro.monto||!registro.fechaPago)throw Error('La multa debe estar pagada y tener fecha de pago');
+    const siguiente=(contadorSnap.exists()?Number(contadorSnap.data().ultimoFolio)||0:0)+1;
+    transaction.set(contadorRef,{tipo:'contador',ultimoFolio:siguiente});
+    transaction.set(multaRef,{...registro,folio:siguiente});
+    return siguiente;
+   });
+   $('multas-estado').textContent='Comprobante N.º '+String(folio).padStart(4,'0')+' emitido correctamente.';
+  }catch(error){$('multas-estado').textContent='No se pudo asignar el folio. Revisa el acceso de Tesorería y vuelve a intentar.';return}
+ }
  const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const fecha=value=>{const p=String(value).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:value};
  const ventana=window.open('','_blank');
  if(!ventana){$('multas-estado').textContent='Habilita las ventanas emergentes para emitir el comprobante.';return}
- const numero=safe(id.replace('multa_2026_','').slice(0,12));
+ const numero=String(folio).padStart(4,'0');
  const copy=tipo=>`<section class="copia">
   <div class="top"><h2>COMPROBANTE</h2><strong>N.º ${numero}</strong></div>
   <div class="encabezado"><strong>ASOCIACIÓN NUEVA CALERA DE TANGO</strong><strong>INGRESO</strong><small>FECHA DE PAGO: ${safe(fecha(m.fechaPago))}</small></div>
