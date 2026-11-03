@@ -50,7 +50,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
   <section class="card full view-section" id="admin" hidden><h2>🔐 Administración</h2><div id="login-box"><p>Solo la tesorería puede modificar los resultados oficiales.</p><label for="admin-email">Correo administrador</label><input id="admin-email" type="email" autocomplete="username" value="tesoreria.nct@gmail.com" readonly style="width:100%"><label for="admin-password">Contraseña</label><input id="admin-password" type="password" autocomplete="current-password" style="width:100%"><button id="login-button" type="button">Ingresar</button></div><div id="admin-panel" hidden><p id="admin-user"></p><button id="verify-button" type="button" hidden>Enviar correo de verificación</button><button id="logout-button" type="button">Cerrar sesión</button><p>Selecciona la fecha. Aquí aparecen juntos el Grupo A y el Grupo B para ingresar los goles y las bonificaciones. Las casillas vacías quedan pendientes.</p><div id="editor"></div><button id="save-results" type="button">Guardar resultados oficiales</button> <button id="save-pending" type="button" style="background:#526a7e;margin-top:8px">Guardar fecha sin resultados</button></div><p id="save-status" class="muted" role="status"></p></section>
   <section class="card full view-section" id="posiciones"><h2>🏆 Tabla de posiciones</h2><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
   <section class="card full view-section" id="goleadores" hidden><h2>⚽ Tabla de goleadores</h2><div class="empty">Los goleadores se publicarán cuando se habilite el registro de anotaciones por partido.</div></section>
-  <section class="card full view-section" id="multas" hidden><h2>📋 Multas</h2><p class="muted">Las multas oficiales todavía no han sido cargadas. Se publicarán aquí cuando la Asociación registre la información.</p></section>
+  <section class="card full view-section" id="multas" hidden><h2>📋 Registro de multas por club</h2><p class="muted">Selecciona un club para consultar sus multas, abonos, saldos y estados de pago.</p><div class="field" style="max-width:450px;margin-bottom:16px"><label for="club-multas">CARPETA DEL CLUB</label><select id="club-multas"></select></div><div id="multas-form" class="notice" hidden><h3 style="margin-top:0">Registrar nueva multa</h3><div class="toolbar"><div class="field"><label for="multa-fecha">Fecha</label><input id="multa-fecha" type="date"></div><div class="field"><label for="multa-vencimiento">Vencimiento</label><input id="multa-vencimiento" type="date"></div><div class="field"><label for="multa-detalle">Detalle de la multa</label><input id="multa-detalle" type="text" maxlength="250" placeholder="Motivo de la multa"></div><div class="field"><label for="multa-monto">Monto ($)</label><input id="multa-monto" type="number" min="0" step="1" placeholder="10000"></div><div class="field"><label for="multa-abonado">Monto abonado ($)</label><input id="multa-abonado" type="number" min="0" step="1" value="0"></div></div><button id="guardar-multa" type="button">Guardar multa</button></div><p id="multas-estado" role="status" class="muted"></p><div id="multas-listado"></div></section>
   <section class="card full view-section" id="castigos" hidden><h2>🟥 Castigos</h2><p class="muted">Los castigos oficiales todavía no han sido cargados. Se publicarán aquí cuando la Asociación registre la información.</p></section>
  </div>
  </div>
@@ -78,6 +78,57 @@ const $=id=>document.getElementById(id);
 const category=$('category'),round=$('round'),season=$('season'),out=$('fixture-content'),editor=$('editor'),status=$('save-status'),standings=$('standings');
 let fixture=null,results={},user=null;
 function isAdmin(){return user&&user.email===adminEmail&&user.emailVerified}
+const CLUBES_MULTAS=['AROMOS DE CHENA','ISLOTE SNIPE','TRICOLOR DE CHENA','ESTRELLA DEL PACIFICO','ESTRELLA DE CARACAS','JUAN SOTO','ROSA DEL SUR','UNION LO HERRERA','HURACAN','RENACER LO HERRERA','JUVENTUD UNIDA','LOS BAJOS','ANTONIO ROMAN','DEFENSOR LOS SAUCES','SANTA INES','LA PORTADA','SAN AGUSTIN','ROTO CHILENO','UNION MUNICIPAL','SAN MIGUEL'];
+const multasData={};
+const selectorMultas=$('club-multas');
+CLUBES_MULTAS.forEach(club=>{const option=document.createElement('option');option.value=club;option.textContent=club;selectorMultas.append(option)});
+const formatoCLP=n=>new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(n);
+function renderMultas(){
+ const club=selectorMultas.value;
+ $('multas-form').hidden=!isAdmin();
+ const list=$('multas-listado');list.replaceChildren();
+ const registros=Object.entries(multasData).filter(([id,v])=>v.club===club).sort((a,b)=>a[1].fecha.localeCompare(b[1].fecha));
+ const heading=document.createElement('h3');heading.textContent='Multas de '+club;list.append(heading);
+ if(!registros.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='Este club no tiene multas registradas.';list.append(empty);return}
+ const scroll=document.createElement('div');scroll.style.overflowX='auto';
+ const table=document.createElement('table');table.style.minWidth='850px';
+ table.innerHTML='<thead><tr><th>Fecha</th><th>Vencimiento</th><th>Detalle de la multa</th><th>Monto</th><th>Monto abonado</th><th>Saldo</th><th>Estado</th><th>Administrar</th></tr></thead>';
+ const tbody=document.createElement('tbody');
+ let total=0,abonadoTotal=0;
+ for(const [id,m] of registros){
+  const saldo=Math.max(0,m.monto-m.abonado);total+=m.monto;abonadoTotal+=m.abonado;
+  const tr=document.createElement('tr');
+  const estado=m.abonado>=m.monto?'Pagado':m.abonado>0?'Abono parcial':'Pendiente';
+  for(const value of [m.fecha,m.vencimiento,m.detalle,formatoCLP(m.monto),formatoCLP(m.abonado),formatoCLP(saldo),estado]){const td=document.createElement('td');td.textContent=value;tr.append(td)}
+  const actions=document.createElement('td');
+  if(isAdmin()){
+   const edit=document.createElement('button');edit.type='button';edit.textContent='Editar';edit.style.padding='6px 10px';
+   edit.addEventListener('click',()=>{
+    const nuevo=prompt('Nuevo monto abonado en pesos para: '+m.detalle,m.abonado);
+    if(nuevo===null)return;
+    const numero=Number(nuevo);
+    if(!Number.isInteger(numero)||numero<0||numero>m.monto){$('multas-estado').textContent='El abono debe ser un número entre 0 y el monto de la multa.';return}
+    $('multas-estado').textContent='Actualizando abono…';
+    setDoc(doc(db,'resultados',id),{...m,abonado:numero,local:0,visita:0}).then(()=>$('multas-estado').textContent='Abono actualizado correctamente.').catch(()=>$('multas-estado').textContent='No se pudo actualizar el abono.');
+   });actions.append(edit);
+  }else{actions.textContent='—'}
+  tr.append(actions);tbody.append(tr);
+ }
+ table.append(tbody);scroll.append(table);list.append(scroll);
+ const summary=document.createElement('p');summary.style.fontWeight='bold';summary.textContent='Total multas: '+formatoCLP(total)+' · Total abonado: '+formatoCLP(abonadoTotal)+' · Saldo pendiente: '+formatoCLP(total-abonadoTotal);list.append(summary);
+}
+selectorMultas.addEventListener('change',renderMultas);
+$('guardar-multa').addEventListener('click',async()=>{
+ if(!isAdmin())return;
+ const fecha=$('multa-fecha').value,vencimiento=$('multa-vencimiento').value,detalle=$('multa-detalle').value.trim();
+ const monto=Number($('multa-monto').value),abonado=Number($('multa-abonado').value);
+ if(!fecha||!vencimiento||!detalle||$('multa-monto').value.trim()===''||!Number.isInteger(monto)||monto<=0||!Number.isInteger(abonado)||abonado<0||abonado>monto){$('multas-estado').textContent='Completa fecha, vencimiento, detalle y montos válidos. El abono no puede superar la multa.';return}
+ const id='multa_2026_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
+ const data={tipo:'multa',club:selectorMultas.value,fecha,vencimiento,detalle,monto,abonado,local:0,visita:0};
+ $('multas-estado').textContent='Guardando multa…';
+ try{await setDoc(doc(db,'resultados',id),data);$('multa-detalle').value='';$('multa-monto').value='';$('multa-abonado').value='0';$('multas-estado').textContent='Multa guardada correctamente.'}catch(e){$('multas-estado').textContent='No se pudo guardar la multa. Revisa los permisos de Firebase.'}
+});
+
 function matchId(g,c,f,i){return ['clausura','2026',g,c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'' ).replace(/[^a-z0-9]+/g,'-'),f,i].join('_')}
 function updateRule(){$('points-rule').textContent=category.value==='general'?'La tabla general suma puntos, partidos y goles de todas las series.':category.value==='Primera Adulta'?'Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.':'Esta categoría: 3 puntos por triunfo, 1 por empate y 0 por derrota.'}
 function selectedMatches(grupo){return fixture?.grupos.find(g=>g.id===grupo)?.fechas.find(f=>f.numero===Number(round.value))?.partidos||[]}
@@ -227,7 +278,7 @@ for(const el of [category,round,season])el.addEventListener('change',render);
 $('login-button').addEventListener('click',async()=>{status.textContent='Verificando acceso…';try{await signInWithEmailAndPassword(auth,adminEmail,$('admin-password').value);$('admin-password').value='';status.textContent='Sesión iniciada.'}catch(e){status.textContent='No se pudo iniciar sesión. Revisa la contraseña y vuelve a intentarlo.'}});
 $('logout-button').addEventListener('click',()=>signOut(auth));
 $('verify-button').addEventListener('click',async()=>{try{await sendEmailVerification(auth.currentUser);status.textContent='Te enviamos un enlace de verificación. Ábrelo desde tu correo y vuelve a iniciar sesión.'}catch(e){status.textContent='No se pudo enviar el enlace de verificación.'}});
-onAuthStateChanged(auth,u=>{user=u;$('login-box').hidden=!!u;$('admin-panel').hidden=!u;$('admin-user').textContent=u?(isAdmin()?'Administrador autorizado: '+u.email:'Correo pendiente de verificación o cuenta no autorizada'):'';$('verify-button').hidden=!u||u.email!==adminEmail||u.emailVerified;$('save-results').hidden=!isAdmin();if(u&&!isAdmin())status.textContent='Debes verificar el correo administrador para poder guardar resultados.';render()});
+onAuthStateChanged(auth,u=>{user=u;$('login-box').hidden=!!u;$('admin-panel').hidden=!u;$('admin-user').textContent=u?(isAdmin()?'Administrador autorizado: '+u.email:'Correo pendiente de verificación o cuenta no autorizada'):'';$('verify-button').hidden=!u||u.email!==adminEmail||u.emailVerified;$('save-results').hidden=!isAdmin();if(u&&!isAdmin())status.textContent='Debes verificar el correo administrador para poder guardar resultados.';renderMultas();render()});
 $('save-results').addEventListener('click',async()=>{
  if(!isAdmin()){status.textContent='Acceso no autorizado.';return}
  const inputs=[...editor.querySelectorAll('input')],writes=[];
@@ -266,7 +317,7 @@ $('save-pending').addEventListener('click',async()=>{
   status.textContent='Fecha '+fecha+' guardada como pendiente. No se asignaron goles ni puntos y no se modificaron resultados existentes.';
  }catch(e){status.textContent='No se pudo guardar la fecha pendiente. Revisa la conexión y los permisos.'}
 });
-onSnapshot(collection(db,'resultados'),snapshot=>{results={};snapshot.forEach(d=>{const v=d.data();if(v.oficial===true||v.sinPuntos===true||(Number.isInteger(v.local)&&Number.isInteger(v.visita)&&v.local>=0&&v.visita>=0))results[d.id]=v});render()},()=>{status.textContent='No se pudo consultar la base de datos. Comprueba la conexión y los permisos.'});
+onSnapshot(collection(db,'resultados'),snapshot=>{results={};for(const id of Object.keys(multasData))delete multasData[id];snapshot.forEach(d=>{const v=d.data();if(v.tipo==='multa'&&typeof v.club==='string'){multasData[d.id]=v;return}if(v.oficial===true||v.sinPuntos===true||(Number.isInteger(v.local)&&Number.isInteger(v.visita)&&v.local>=0&&v.visita>=0))results[d.id]=v});renderMultas();render()},()=>{status.textContent='No se pudo consultar la base de datos. Comprueba la conexión y los permisos.'});
 fetch('data/fixture-clausura-2026.json').then(r=>r.json()).then(data=>{fixture=data;round.replaceChildren();for(let i=1;i<=9;i++){const o=document.createElement('option');o.value=i;o.textContent='Fecha '+i;round.append(o)}render()}).catch(()=>{out.textContent='No se pudo cargar el fixture.'});
 </script>
 </body></html>
