@@ -155,8 +155,8 @@ function render(){
 }
 const SERIES=['Dorados','Súper Senior','Senior','Tercera Infantil','Femenino','Segunda Infantil','Juvenil','Tercera Adulta','Segunda Adulta','Primera Adulta'];
 function calculateStandings(serie,grupo){
- const teams=new Map(),fechas=fixture?.grupos.find(g=>g.id===grupo)?.fechas||[];
- for(const fecha of fechas)fecha.partidos.forEach((p,i)=>{
+ const teams=new Map(),fechas=fixture?.grupos.find(g=>g.id===grupo)?.fechas||[],fechaLimite=Number(round.value);
+ for(const fecha of fechas.filter(f=>f.numero<=fechaLimite))fecha.partidos.forEach((p,i)=>{
   for(const name of [p.local,p.visita])if(!teams.has(name))teams.set(name,{name,j:0,g:0,e:0,p:0,gf:0,gc:0,pts:0});
   const r=results[matchId(grupo,serie,fecha.numero,i)];if(!r)return;
   const a=teams.get(p.local),b=teams.get(p.visita);a.j++;b.j++;a.gf+=r.local;a.gc+=r.visita;b.gf+=r.visita;b.gc+=r.local;
@@ -176,7 +176,7 @@ function makeTable(title,teams,isGeneral=false){
 const SALDO_CAMPEONATO_ANTERIOR=[["ROTO CHILENO",190,123,24,43,374,23,25,422],["SANTA INES",190,115,30,45,354,15,25,394],["TRICOLOR DE CHENA",190,110,37,43,306,25,5,336],["AROMOS DE CHENA",190,100,28,62,301,11,5,317],["DEFENSOR LOS SAUCES",190,104,27,59,302,6,5,313],["UNION MUNICIPAL",190,77,35,78,248,16,15,279],["ISLOTE SNIPE",190,92,35,63,248,13,15,276],["ROSA DEL SUR",190,80,37,73,251,17,5,273],["ESTRELLA DE CARACAS",190,91,31,68,237,28,5,270],["LA PORTADA",190,86,34,70,244,11,0,255],["SAN MIGUEL",190,72,31,87,222,21,10,253],["RENACER LO HERRERA",190,71,32,87,237,5,0,242],["UNION LO HERRERA",190,77,24,89,203,22,15,240],["ANTONIO ROMAN",190,62,35,93,205,9,5,219],["JUVENTUD UNIDA",190,66,28,96,194,10,5,209],["ESTRELLA DEL PACIFICO",190,74,23,93,193,7,0,200],["HURACAN",190,64,25,101,184,3,10,197],["SAN AGUSTIN",190,57,24,109,158,14,0,172],["LOS BAJOS",190,41,26,123,156,5,10,171],["JUAN SOTO",190,40,24,126,122,0,0,122]];
 function tablaGeneralActualizada(general){
  const container=document.createElement('section');
- const title=document.createElement('h3');title.textContent='TABLA GENERAL · SALDO ANTERIOR + CLAUSURA 2026 · 20 CLUBES';title.style.cssText='background:#72a942;color:#111;text-align:center;padding:9px;margin:12px 0 0';container.append(title);
+ const title=document.createElement('h3');title.textContent='TABLA GENERAL · SALDO ANTERIOR + CLAUSURA 2026 HASTA FECHA '+round.value+' · 20 CLUBES';title.style.cssText='background:#72a942;color:#111;text-align:center;padding:9px;margin:12px 0 0';container.append(title);
  const explanation=document.createElement('p');explanation.className='muted';explanation.textContent='Acumula el saldo anterior y los resultados oficiales del Clausura 2026. Tercera Infantil no suma. F.A corresponde al saldo histórico informado.';container.append(explanation);
  const table=document.createElement('table');table.innerHTML='<thead><tr><th>Pos</th><th>Equipo</th><th>J</th><th>G</th><th>E</th><th>P</th><th>F.A</th><th>PTS.</th><th>Bonif.</th><th>TOTAL</th></tr></thead>';
  const body=document.createElement('tbody');
@@ -190,11 +190,12 @@ function tablaGeneralActualizada(general){
 }
 function renderStandings(){
  const fragment=document.createDocumentFragment();
+ const fechaLimite=Number(round.value);
  const general=new Map();
  for(const serie of SERIES){
   for(const grupo of ['A','B']){
    const teams=calculateStandings(serie,grupo);
-   if(category.value==='todas'||category.value===serie)fragment.append(makeTable('Tabla de la serie '+serie+' · Grupo '+grupo+' · Clausura 2026',teams));
+   if(category.value==='todas'||category.value===serie)fragment.append(makeTable('Tabla de la serie '+serie+' · Grupo '+grupo+' · Clausura 2026 · Hasta fecha '+fechaLimite,teams));
    if(serie==='Tercera Infantil')continue;
    for(const t of teams){
     if(!general.has(t.name))general.set(t.name,{name:t.name,j:0,g:0,e:0,p:0,gf:0,gc:0,pts:0});
@@ -203,7 +204,7 @@ function renderStandings(){
    }
   }
  }
- for(const grupo of ['A','B']){const fechas=fixture?.grupos.find(g=>g.id===grupo)?.fechas||[];for(const fecha of fechas)fecha.partidos.forEach((p,i)=>{[p.local,p.visita].forEach((club,side)=>{const r=results[bonusId(grupo,fecha.numero,i,side)];if(r&&general.has(club)){const t=general.get(club);t.bonus=(t.bonus||0)+r.local}})})}
+ for(const grupo of ['A','B']){const fechas=fixture?.grupos.find(g=>g.id===grupo)?.fechas||[];for(const fecha of fechas.filter(f=>f.numero<=fechaLimite))fecha.partidos.forEach((p,i)=>{[p.local,p.visita].forEach((club,side)=>{const r=results[bonusId(grupo,fecha.numero,i,side)];if(r&&general.has(club)){const t=general.get(club);t.bonus=(t.bonus||0)+r.local}})})}
  if(category.value==='todas'||category.value==='general')fragment.append(tablaGeneralActualizada(general));
  standings.replaceChildren(fragment);standings.className='';
 }
