@@ -199,7 +199,7 @@ function renderStandings(){
    for(const t of teams){
     if(!general.has(t.name))general.set(t.name,{name:t.name,j:0,g:0,e:0,p:0,gf:0,gc:0,pts:0});
     const total=general.get(t.name);
-    for(const field of (serie==='Tercera Infantil'?['j']:['j','g','e','p','gf','gc','pts']))total[field]+=t[field];
+    for(const field of (serie==='Tercera Infantil'?['j','g','e','p']:['j','g','e','p','gf','gc','pts']))total[field]+=t[field];
    }
   }
  }
