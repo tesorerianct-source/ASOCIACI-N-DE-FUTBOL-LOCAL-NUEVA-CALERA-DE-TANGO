@@ -48,7 +48,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
  <div class="grid">
   <section class="card full view-section" id="fixture" hidden><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div id="fixture-content" class="empty">Cargando fixture Clausura 2026…</div></section>
   <section class="card full view-section" id="admin" hidden><h2>🔐 Administración</h2><div id="login-box"><p>Solo la tesorería puede modificar los resultados oficiales.</p><label for="admin-email">Correo administrador</label><input id="admin-email" type="email" autocomplete="username" value="tesoreria.nct@gmail.com" readonly style="width:100%"><label for="admin-password">Contraseña</label><input id="admin-password" type="password" autocomplete="current-password" style="width:100%"><button id="login-button" type="button">Ingresar</button></div><div id="admin-panel" hidden><p id="admin-user"></p><button id="verify-button" type="button" hidden>Enviar correo de verificación</button><button id="logout-button" type="button">Cerrar sesión</button><p>Selecciona la fecha. Aquí aparecen juntos el Grupo A y el Grupo B para ingresar los goles y las bonificaciones. Las casillas vacías quedan pendientes.</p><div id="editor"></div><button id="save-results" type="button">Guardar resultados oficiales</button> <button id="save-pending" type="button" style="background:#526a7e;margin-top:8px">Guardar fecha sin resultados</button></div><p id="save-status" class="muted" role="status"></p></section>
-  <section class="card full view-section" id="posiciones"><h2>🏆 Tabla de posiciones</h2><button type="button" id="descargar-tablas-2-hojas" style="margin:0 0 12px;background:#1769aa">📄 Descargar tablas en 2 hojas (PDF)</button><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
+  <section class="card full view-section" id="posiciones"><h2>🏆 Tabla de posiciones</h2><button type="button" id="descargar-tablas-2-hojas" style="margin:0 0 12px;background:#1769aa">📄 Descargar tablas ordenadas · 6 por hoja (PDF)</button><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
   <section class="card full view-section" id="goleadores" hidden>
 <h2>📖 Anuario de jugadores</h2><p class="muted">Consulta privada: Tesorería puede agregar y editar jugadores; los clubes autorizados solo pueden consultar.</p><p id="anuario-acceso" class="notice">Inicia sesión en Administración o Pagos y devoluciones para consultar el Anuario.</p>
 <div id="anuario-form" class="notice" hidden><h3>Agregar o editar jugador</h3>
@@ -531,18 +531,45 @@ for(const grupo of ['A','B']){const fechas=fixture?.grupos.find(g=>g.id===grupo)
 $('descargar-tablas-2-hojas').addEventListener('click',()=>{
  if(!fixture||season.value!=='2026'){alert('No hay tablas disponibles para esta temporada.');return}
  const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
- const fecha=Number(round.value),series=SERIES.filter(x=>x!=='Tercera Infantil').concat(['Tercera Infantil']);
- const nombres={'Súper Senior':'SÚPER SENIOR','Tercera Infantil':'3ª INFANTIL','Segunda Infantil':'2ª INFANTIL'};
+ const fecha=Number(round.value);
+ const series=['Dorados','Súper Senior','Senior','Tercera Infantil','Femenino','Segunda Infantil','Juvenil','Tercera Adulta','Segunda Adulta','Primera Adulta'];
+ const nombres={'Súper Senior':'SÚPER SENIOR','Tercera Infantil':'TERCERA INFANTIL','Segunda Infantil':'SEGUNDA INFANTIL'};
  const tabla=(serie,grupo)=>{
   const equipos=calculateStandings(serie,grupo).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf||a.name.localeCompare(b.name,'es'));
   const filas=equipos.map((t,i)=>'<tr>'+[i+1,t.name,t.j,t.g,t.e,t.gf,t.gc,t.gf-t.gc,t.pts].map(v=>'<td>'+escapeHTML(v)+'</td>').join('')+'</tr>').join('');
   return '<div class="tabla"><div class="titulo">'+escapeHTML(nombres[serie]||serie).toUpperCase()+' · GRUPO '+grupo+'</div><table><thead><tr><th>Pos</th><th>Equipo</th><th>J</th><th>G</th><th>E</th><th>GF</th><th>GC</th><th>DF</th><th>Pts.</th></tr></thead><tbody>'+filas+'</tbody></table></div>';
  };
- const hojas=[series.slice(0,5),series.slice(5,10)];
- const paginas=hojas.map((categorias,n)=>'<section class="pagina"><header><div>ASOCIACIÓN DE FÚTBOL<br>NUEVA CALERA DE TANGO</div><div><h1>TABLAS DE POSICIONES</h1><strong>CLAUSURA 2026 · FECHA N.º '+fecha+'</strong></div><div>HOJA '+(n+1)+' DE 2</div></header><main>'+categorias.map(serie=>['A','B'].map(grupo=>tabla(serie,grupo)).join('')).join('')+'</main><footer>Información calculada con los resultados registrados en el sitio oficial · Fecha de impresión: '+new Date().toLocaleDateString('es-CL')+'</footer></section>').join('');
- const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Tablas de posiciones · Clausura 2026 · Fecha '+fecha+'</title><style>@page{size:A4 landscape;margin:7mm}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#111}.pagina{break-after:page;page-break-after:always;min-height:180mm;display:flex;flex-direction:column}.pagina:last-child{break-after:auto;page-break-after:auto}header{display:flex;align-items:center;justify-content:space-between;text-align:center;gap:8px;margin-bottom:6px;font-size:10px}header>div:first-child,header>div:last-child{width:22%;font-weight:bold}h1{font-size:18px;margin:0}header strong{font-size:12px}main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 9px;align-content:start;flex:1}.tabla{break-inside:avoid}.titulo{background:#1a9ed1;color:white;text-align:center;font-weight:bold;font-size:10px;padding:2px}table{width:100%;border-collapse:collapse;font-size:7px;line-height:1.15}th,td{border:1px solid #222;padding:1.5px 2px;text-align:center}th{background:#dceaf3}td:nth-child(2),th:nth-child(2){text-align:left;white-space:nowrap}td:nth-child(2){font-weight:600}footer{font-size:8px;text-align:center;margin-top:5px}@media screen{body{background:#ddd;padding:20px}.pagina{background:white;width:297mm;min-height:210mm;margin:0 auto 20px;padding:7mm;box-shadow:0 2px 10px #aaa}}@media print{body{padding:0}.pagina{min-height:190mm}}</style></head><body>'+paginas+'<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),400))<\\/script></body></html>';
- const ventana=window.open('','_blank');
- if(!ventana){alert('Permite las ventanas emergentes para descargar las tablas.');return}
+ const general=new Map();
+ for(const serie of SERIES)for(const grupo of ['A','B'])for(const t of calculateStandings(serie,grupo)){
+  if(!general.has(t.name))general.set(t.name,{name:t.name,j:0,g:0,e:0,p:0,pts:0});
+  const total=general.get(t.name);
+  for(const field of ['j','g','e','p',...(serie==='Tercera Infantil'?[]:['pts'])])total[field]+=t[field];
+ }
+ for(const grupo of ['A','B']){
+  const fechaActual=fixture?.grupos.find(g=>g.id===grupo)?.fechas.find(f=>f.numero===fecha);
+  if(fechaActual)fechaActual.partidos.forEach((p,i)=>{
+   for(const serie of SERIES){if(serie==='Tercera Infantil')continue;
+    const r=results[matchId(grupo,serie,fecha,i)];if(!r||r.sinPuntos)continue;
+    for(const [club,x,y] of [[p.local,r.local,r.visita],[p.visita,r.visita,r.local]]){
+     const t=general.get(club);if(t)t.ptsFecha=(t.ptsFecha||0)+(x>y?(serie==='Primera Adulta'?4:3):x===y?(serie==='Primera Adulta'?2:1):0);
+    }
+   }
+  });
+  const fechas=fixture?.grupos.find(g=>g.id===grupo)?.fechas||[];
+  for(const f of fechas.filter(f=>f.numero<=fecha))f.partidos.forEach((p,i)=>{
+   [p.local,p.visita].forEach((club,side)=>{const r=results[bonusId(grupo,f.numero,i,side)];if(r&&general.has(club)){const t=general.get(club);t.bonus=(t.bonus||0)+r.local}});
+  });
+ }
+ const generalRows=SALDO_CAMPEONATO_ANTERIOR.map(v=>{
+  const [name,j,g,e,p,fa,pts,bonus,total]=v,c=general.get(name)||{j:0,g:0,e:0,p:0,pts:0,ptsFecha:0,bonus:0};
+  return {name,j:j+c.j,g:g+c.g,e:e+c.e,p:p+c.p,fa:fa+pts+c.pts-(c.ptsFecha||0),pts:c.ptsFecha||0,bonus:bonus+(c.bonus||0),total:total+c.pts+(c.bonus||0)};
+ }).sort((a,b)=>b.total-a.total||b.pts-a.pts||a.name.localeCompare(b.name,'es'));
+ const generalHTML='<div class="tabla general"><div class="titulo">TABLA GENERAL · SALDO ANTERIOR + CLAUSURA 2026</div><table><thead><tr><th>Pos</th><th>Equipo</th><th>J</th><th>G</th><th>E</th><th>P</th><th>F.A</th><th>PTS.</th><th>Bonif.</th><th>TOTAL</th></tr></thead><tbody>'+generalRows.map((t,i)=>'<tr>'+[i+1,t.name,t.j,t.g,t.e,t.p,t.fa,t.pts,t.bonus,t.total].map(v=>'<td>'+escapeHTML(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table><p class="nota">Tercera Infantil no suma puntos a la Tabla General.</p></div>';
+ const bloques=series.flatMap(serie=>['A','B'].map(grupo=>tabla(serie,grupo))).concat(generalHTML);
+ const hojas=[];for(let i=0;i<bloques.length;i+=6)hojas.push(bloques.slice(i,i+6));
+ const paginas=hojas.map((items,n)=>'<section class="pagina"><header><div>ASOCIACIÓN DE FÚTBOL<br>NUEVA CALERA DE TANGO</div><div><h1>TABLAS DE POSICIONES</h1><strong>CLAUSURA 2026 · FECHA N.º '+fecha+'</strong></div><div>HOJA '+(n+1)+' DE '+hojas.length+'</div></header><main>'+items.join('')+'</main><footer>Resultados registrados en el sitio oficial · Impreso: '+new Date().toLocaleDateString('es-CL')+'</footer></section>').join('');
+ const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Tablas de posiciones · Fecha '+fecha+'</title><style>@page{size:A4 landscape;margin:7mm}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#111}.pagina{break-after:page;page-break-after:always;min-height:180mm;display:flex;flex-direction:column}.pagina:last-child{break-after:auto;page-break-after:auto}header{display:flex;align-items:center;justify-content:space-between;text-align:center;gap:8px;margin-bottom:6px;font-size:10px}header>div:first-child,header>div:last-child{width:22%;font-weight:bold}h1{font-size:18px;margin:0}header strong{font-size:12px}main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;align-content:start;flex:1}.tabla{break-inside:avoid}.titulo{background:#1a9ed1;color:#fff;text-align:center;font-weight:bold;font-size:11px;padding:3px}.general .titulo{background:#72a942;color:#111}table{width:100%;border-collapse:collapse;font-size:7.5px;line-height:1.2}th,td{border:1px solid #222;padding:2px;text-align:center}th{background:#dceaf3}td:nth-child(2),th:nth-child(2){text-align:left;white-space:nowrap}td:nth-child(2){font-weight:600}.nota,footer{font-size:8px;text-align:center;margin-top:5px}@media screen{body{background:#ddd;padding:20px}.pagina{background:#fff;width:297mm;min-height:210mm;margin:0 auto 20px;padding:7mm;box-shadow:0 2px 10px #aaa}}@media print{body{padding:0}.pagina{min-height:190mm}}</style></head><body>'+paginas+'<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),400))<\\/script></body></html>';
+ const ventana=window.open('','_blank');if(!ventana){alert('Permite las ventanas emergentes para descargar las tablas.');return}
  ventana.document.open();ventana.document.write(html);ventana.document.close();
 });
 for(const el of [category,round,season])el.addEventListener('change',render);
