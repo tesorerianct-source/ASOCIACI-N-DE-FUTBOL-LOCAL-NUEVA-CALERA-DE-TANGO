@@ -50,7 +50,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
   <section class="card full view-section" id="admin" hidden><h2>🔐 Administración</h2><div id="login-box"><p>Solo la tesorería puede modificar los resultados oficiales.</p><label for="admin-email">Correo administrador</label><input id="admin-email" type="email" autocomplete="username" value="tesoreria.nct@gmail.com" readonly style="width:100%"><label for="admin-password">Contraseña</label><input id="admin-password" type="password" autocomplete="current-password" style="width:100%"><button id="login-button" type="button">Ingresar</button></div><div id="admin-panel" hidden><p id="admin-user"></p><button id="verify-button" type="button" hidden>Enviar correo de verificación</button><button id="logout-button" type="button">Cerrar sesión</button><p>Selecciona la fecha. Aquí aparecen juntos el Grupo A y el Grupo B para ingresar los goles y las bonificaciones. Las casillas vacías quedan pendientes.</p><div id="editor"></div><button id="save-results" type="button">Guardar resultados oficiales</button> <button id="save-pending" type="button" style="background:#526a7e;margin-top:8px">Guardar fecha sin resultados</button></div><p id="save-status" class="muted" role="status"></p></section>
   <section class="card full view-section" id="posiciones"><h2>🏆 Tabla de posiciones</h2><button type="button" id="descargar-tablas-2-hojas" style="margin:0 0 12px;background:#1769aa">📄 Descargar tablas en 2 hojas (PDF)</button><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
   <section class="card full view-section" id="goleadores" hidden>
-<h2>📖 Anuario de jugadores</h2><p class="muted">Consulta privada y de solo lectura para Tesorería y clubes autorizados.</p><p id="anuario-acceso" class="notice">Inicia sesión en Administración o Pagos y devoluciones para consultar el Anuario.</p>
+<h2>📖 Anuario de jugadores</h2><p class="muted">Consulta privada: Tesorería puede agregar y editar jugadores; los clubes autorizados solo pueden consultar.</p><p id="anuario-acceso" class="notice">Inicia sesión en Administración o Pagos y devoluciones para consultar el Anuario.</p>
 <div id="anuario-form" class="notice" hidden><h3>Agregar o editar jugador</h3>
 <div class="toolbar">
 <div class="field"><label for="anuario-nombre">Nombre del jugador</label><input id="anuario-nombre" maxlength="160" required></div>
@@ -100,7 +100,7 @@ const CLUBES_MULTAS=['AROMOS DE CHENA','ISLOTE SNIPE','TRICOLOR DE CHENA','ESTRE
 const anuarioData={};let anuarioEditId=null;
 const anuarioCampos=['nombre','rut','nacimiento','federac','categoria','club','sancion','cumple','informacion'];
 function renderAnuario(){
- $('anuario-form').hidden=true;
+ $('anuario-form').hidden=!isAdmin();
  $('anuario-acceso').hidden=!!(isAdmin()||clubAutorizado);
  const texto=$('anuario-buscar').value.trim().toLocaleLowerCase('es');
  const registros=(isAdmin()||clubAutorizado?Object.entries(anuarioData):[]).filter(([id,v])=>anuarioCampos.some(c=>String(v[c]||'').toLocaleLowerCase('es').includes(texto))).sort((a,b)=>String(a[1].nombre||'').localeCompare(String(b[1].nombre||''),'es'));
@@ -108,13 +108,13 @@ function renderAnuario(){
  if(!registros.length){const p=document.createElement('p');p.className='muted';p.textContent='No hay jugadores registrados para esta búsqueda.';destino.append(p);return}
  const tabla=document.createElement('table');tabla.style.minWidth='1200px';
  const cab=document.createElement('thead'),fila=document.createElement('tr');
- for(const titulo of ['NOMBRE DEL JUGADOR','R.U.T.','F.NACTO','FEDERAC.','CATEGORÍA','CLUB','SANCIÓN','CUMPLE SANCIÓN','INFORMACIÓN']){const th=document.createElement('th');th.textContent=titulo;fila.append(th)}
+ for(const titulo of ['NOMBRE DEL JUGADOR','R.U.T.','F.NACTO','FEDERAC.','CATEGORÍA','CLUB','SANCIÓN','CUMPLE SANCIÓN','INFORMACIÓN',...(isAdmin()?['EDITAR']:[])]){const th=document.createElement('th');th.textContent=titulo;fila.append(th)}
  cab.append(fila);tabla.append(cab);
  const cuerpo=document.createElement('tbody');
  for(const [id,v] of registros){
   const tr=document.createElement('tr');
   for(const campo of anuarioCampos){const td=document.createElement('td');td.textContent=v[campo]||'—';if(campo==='categoria'){const c=String(v[campo]||'').toUpperCase();td.style.color=c.includes('INFANTIL')?'#c62828':'#111111';td.style.fontWeight='700'}tr.append(td)}
-  if(false){
+  if(isAdmin()){
    const td=document.createElement('td'),btn=document.createElement('button');btn.type='button';btn.textContent='Editar';btn.addEventListener('click',()=>{
     anuarioEditId=id;for(const campo of anuarioCampos)$('anuario-'+campo).value=v[campo]||'';
     $('anuario-guardar').textContent='Guardar cambios';$('anuario-cancelar').hidden=false;
@@ -133,14 +133,14 @@ CLUBES_MULTAS.forEach(club=>{const op=document.createElement('option');op.value=
 $('anuario-buscar').addEventListener('input',renderAnuario);
 $('anuario-cancelar').addEventListener('click',cancelarAnuario);
 $('anuario-guardar').addEventListener('click',async()=>{
- return; // Anuario de solo lectura: deshabilitada la edición
+ if(!isAdmin())return;
  const datos={tipo:'anuario'};
  for(const campo of anuarioCampos)datos[campo]=$('anuario-'+campo).value.trim();
  if(!datos.nombre||!datos.club){$('anuario-estado').textContent='Ingresa el nombre y el club del jugador.';return}
  const id=anuarioEditId||'anuario_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
  $('anuario-estado').textContent='Guardando…';
  try{
-  await setDoc(doc(db,'resultados',id),datos);
+  await setDoc(doc(db,'anuario_privado',id),datos);
   $('anuario-estado').textContent='Jugador guardado correctamente.';
   cancelarAnuario();
  }catch(e){$('anuario-estado').textContent='No se pudo guardar. Comprueba tu sesión de administrador.'}
