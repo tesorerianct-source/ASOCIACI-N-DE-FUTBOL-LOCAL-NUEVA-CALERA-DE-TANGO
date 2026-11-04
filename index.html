@@ -64,6 +64,7 @@ import {getFirestore,doc,getDoc,setDoc,collection,onSnapshot,runTransaction} fro
 const app=initializeApp({apiKey:"AIzaSyBN0upeHSSumkUFvYEb9x9e0ti81nH9rSo",authDomain:"liga-nueva-calera-de-tango.firebaseapp.com",projectId:"liga-nueva-calera-de-tango",storageBucket:"liga-nueva-calera-de-tango.firebasestorage.app",messagingSenderId:"22682983108",appId:"1:22682983108:web:cb7b03b840977999164791"});
 const auth=getAuth(app),db=getFirestore(app),adminEmail='tesoreria.nct@gmail.com';
 function showView(view){
+ if(view==='multas'&&!isAdmin())view='posiciones';
  if(!document.getElementById(view)?.classList.contains('view-section'))return;
  document.querySelectorAll('.view-section').forEach(section=>{section.hidden=section.id!==view});
  document.querySelectorAll('.side-menu button').forEach(btn=>{const active=btn.dataset.view===view;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active))});
@@ -72,7 +73,7 @@ function showView(view){
 }
 document.querySelectorAll('.side-menu button').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
 const initialView=location.hash.slice(1);
-showView(document.getElementById(initialView)?.classList.contains('view-section')?initialView:'posiciones');
+showView(initialView==='multas'?'posiciones':(document.getElementById(initialView)?.classList.contains('view-section')?initialView:'posiciones'));
 window.addEventListener('hashchange',()=>{const view=location.hash.slice(1);if(document.getElementById(view)?.classList.contains('view-section'))showView(view)});
 const $=id=>document.getElementById(id);
 const category=$('category'),round=$('round'),season=$('season'),out=$('fixture-content'),editor=$('editor'),status=$('save-status'),standings=$('standings');
@@ -356,7 +357,7 @@ for(const el of [category,round,season])el.addEventListener('change',render);
 $('login-button').addEventListener('click',async()=>{status.textContent='Verificando acceso…';try{await signInWithEmailAndPassword(auth,adminEmail,$('admin-password').value);$('admin-password').value='';status.textContent='Sesión iniciada.'}catch(e){status.textContent='No se pudo iniciar sesión. Revisa la contraseña y vuelve a intentarlo.'}});
 $('logout-button').addEventListener('click',()=>signOut(auth));
 $('verify-button').addEventListener('click',async()=>{try{await sendEmailVerification(auth.currentUser);status.textContent='Te enviamos un enlace de verificación. Ábrelo desde tu correo y vuelve a iniciar sesión.'}catch(e){status.textContent='No se pudo enviar el enlace de verificación.'}});
-onAuthStateChanged(auth,u=>{user=u;$('login-box').hidden=!!u;$('admin-panel').hidden=!u;$('admin-user').textContent=u?(isAdmin()?'Administrador autorizado: '+u.email:'Correo pendiente de verificación o cuenta no autorizada'):'';$('verify-button').hidden=!u||u.email!==adminEmail||u.emailVerified;$('save-results').hidden=!isAdmin();if(u&&!isAdmin())status.textContent='Debes verificar el correo administrador para poder guardar resultados.';renderMultas();render()});
+onAuthStateChanged(auth,u=>{user=u;document.querySelector('[data-view="multas"]').hidden=!isAdmin();if(!isAdmin()&&location.hash==='#multas')showView('posiciones');$('login-box').hidden=!!u;$('admin-panel').hidden=!u;$('admin-user').textContent=u?(isAdmin()?'Administrador autorizado: '+u.email:'Correo pendiente de verificación o cuenta no autorizada'):'';$('verify-button').hidden=!u||u.email!==adminEmail||u.emailVerified;$('save-results').hidden=!isAdmin();if(u&&!isAdmin())status.textContent='Debes verificar el correo administrador para poder guardar resultados.';renderMultas();render()});
 $('save-results').addEventListener('click',async()=>{
  if(!isAdmin()){status.textContent='Acceso no autorizado.';return}
  const inputs=[...editor.querySelectorAll('input')],writes=[];
