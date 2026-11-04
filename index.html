@@ -183,7 +183,7 @@ function renderMultas(){
      fechaPago=ingresada;
     }else fechaPago='';
     $('multas-estado').textContent='Actualizando abono…';
-    setDoc(doc(db,'resultados',id),{...m,abonado:numero,fechaPago,local:0,visita:0}).then(()=>$('multas-estado').textContent='Abono actualizado correctamente.').catch(()=>$('multas-estado').textContent='No se pudo actualizar el abono.');
+    setDoc(doc(db,'multas',id),{...m,abonado:numero,fechaPago,local:0,visita:0}).then(()=>$('multas-estado').textContent='Abono actualizado correctamente.').catch(()=>$('multas-estado').textContent='No se pudo actualizar el abono.');
    });actions.append(edit);
   }else{actions.textContent='—'}
   tr.append(actions);tbody.append(tr);
@@ -200,7 +200,7 @@ async function emitirComprobanteMulta(id,m){
   $('multas-estado').textContent='Asignando folio correlativo…';
   try{
    folio=await runTransaction(db,async transaction=>{
-    const multaRef=doc(db,'resultados',id),contadorRef=doc(db,'resultados','contador_folios_multas');
+    const multaRef=doc(db,'multas',id),contadorRef=doc(db,'configuracion_privada','contador_folios_multas');
     const multaSnap=await transaction.get(multaRef);
     const contadorSnap=await transaction.get(contadorRef);
     if(!multaSnap.exists())throw Error('Multa no encontrada');
@@ -266,7 +266,7 @@ $('guardar-multa').addEventListener('click',async()=>{
  const id='multa_2026_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
  const data={tipo:'multa',club:selectorMultas.value,fecha,vencimiento,detalle,monto,abonado,fechaPago:abonado===monto?fechaPago:'',local:0,visita:0};
  $('multas-estado').textContent='Guardando multa…';
- try{await setDoc(doc(db,'resultados',id),data);$('multa-detalle').value='';$('multa-monto').value='';$('multa-abonado').value='0';$('multa-pago').value='';$('multas-estado').textContent='Multa guardada correctamente.'}catch(e){$('multas-estado').textContent='No se pudo guardar la multa. Revisa los permisos de Firebase.'}
+ try{await setDoc(doc(db,'multas',id),data);$('multa-detalle').value='';$('multa-monto').value='';$('multa-abonado').value='0';$('multa-pago').value='';$('multas-estado').textContent='Multa guardada correctamente.'}catch(e){$('multas-estado').textContent='No se pudo guardar la multa. Revisa los permisos de Firebase.'}
 });
 
 function matchId(g,c,f,i){return ['clausura','2026',g,c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'' ).replace(/[^a-z0-9]+/g,'-'),f,i].join('_')}
@@ -418,7 +418,7 @@ for(const el of [category,round,season])el.addEventListener('change',render);
 $('login-button').addEventListener('click',async()=>{status.textContent='Verificando acceso…';try{await signInWithEmailAndPassword(auth,adminEmail,$('admin-password').value);$('admin-password').value='';status.textContent='Sesión iniciada.'}catch(e){status.textContent='No se pudo iniciar sesión. Revisa la contraseña y vuelve a intentarlo.'}});
 $('logout-button').addEventListener('click',()=>signOut(auth));
 $('verify-button').addEventListener('click',async()=>{try{await sendEmailVerification(auth.currentUser);status.textContent='Te enviamos un enlace de verificación. Ábrelo desde tu correo y vuelve a iniciar sesión.'}catch(e){status.textContent='No se pudo enviar el enlace de verificación.'}});
-onAuthStateChanged(auth,u=>{user=u;migrarButton.hidden=!isAdmin();backupButton.hidden=!isAdmin();document.querySelector('[data-view="multas"]').hidden=!isAdmin();if(!isAdmin()&&location.hash==='#multas')showView('posiciones');$('login-box').hidden=!!u;$('admin-panel').hidden=!u;$('admin-user').textContent=u?(isAdmin()?'Administrador autorizado: '+u.email:'Correo pendiente de verificación o cuenta no autorizada'):'';$('verify-button').hidden=!u||u.email!==adminEmail||u.emailVerified;$('save-results').hidden=!isAdmin();if(u&&!isAdmin())status.textContent='Debes verificar el correo administrador para poder guardar resultados.';renderMultas();render()});
+onAuthStateChanged(auth,u=>{user=u;migrarButton.hidden=true;backupButton.hidden=!isAdmin();document.querySelector('[data-view="multas"]').hidden=!isAdmin();if(!isAdmin()&&location.hash==='#multas')showView('posiciones');$('login-box').hidden=!!u;$('admin-panel').hidden=!u;$('admin-user').textContent=u?(isAdmin()?'Administrador autorizado: '+u.email:'Correo pendiente de verificación o cuenta no autorizada'):'';$('verify-button').hidden=!u||u.email!==adminEmail||u.emailVerified;$('save-results').hidden=!isAdmin();if(u&&!isAdmin())status.textContent='Debes verificar el correo administrador para poder guardar resultados.';renderMultas();render()});
 $('save-results').addEventListener('click',async()=>{
  if(!isAdmin()){status.textContent='Acceso no autorizado.';return}
  const inputs=[...editor.querySelectorAll('input')],writes=[];
@@ -453,11 +453,13 @@ $('save-pending').addEventListener('click',async()=>{
  const id='pendiente_2026_fecha_'+fecha;
  status.textContent='Registrando fecha '+fecha+' como pendiente…';
  try{
-  await setDoc(doc(db,'resultados',id),{pendiente:true,fecha:Number(fecha),temporada:2026,registradoEn:new Date().toISOString()});
+  await setDoc(doc(db,'multas',id),{pendiente:true,fecha:Number(fecha),temporada:2026,registradoEn:new Date().toISOString()});
   status.textContent='Fecha '+fecha+' guardada como pendiente. No se asignaron goles ni puntos y no se modificaron resultados existentes.';
  }catch(e){status.textContent='No se pudo guardar la fecha pendiente. Revisa la conexión y los permisos.'}
 });
-onSnapshot(collection(db,'resultados'),snapshot=>{results={};for(const id of Object.keys(multasData))delete multasData[id];snapshot.forEach(d=>{const v=d.data();if(v.tipo==='multa'&&typeof v.club==='string'){multasData[d.id]=v;return}if(v.oficial===true||v.sinPuntos===true||(Number.isInteger(v.local)&&Number.isInteger(v.visita)&&v.local>=0&&v.visita>=0))results[d.id]=v});renderMultas();render()},()=>{status.textContent='No se pudo consultar la base de datos. Comprueba la conexión y los permisos.'});
+onSnapshot(collection(db,'resultados'),snapshot=>{results={};snapshot.forEach(d=>{const v=d.data();if(v.tipo==='multa')return;if(v.oficial===true||v.sinPuntos===true||(Number.isInteger(v.local)&&Number.isInteger(v.visita)&&v.local>=0&&v.visita>=0))results[d.id]=v});render()},()=>{status.textContent='No se pudo consultar la base de datos. Comprueba la conexión y los permisos.'});
+let unsubscribePrivateMultas=null;
+onAuthStateChanged(auth,u=>{if(unsubscribePrivateMultas){unsubscribePrivateMultas();unsubscribePrivateMultas=null}for(const id of Object.keys(multasData))delete multasData[id];renderMultas();if(u&&isAdmin()){unsubscribePrivateMultas=onSnapshot(collection(db,'multas'),snapshot=>{for(const id of Object.keys(multasData))delete multasData[id];snapshot.forEach(d=>{const v=d.data();if(v.tipo==='multa'&&typeof v.club==='string')multasData[d.id]=v});renderMultas()},()=>{$('multas-estado').textContent='No se pudieron cargar las multas privadas.'})}});
 fetch('data/fixture-clausura-2026.json').then(r=>r.json()).then(data=>{fixture=data;round.replaceChildren();for(let i=1;i<=9;i++){const o=document.createElement('option');o.value=i;o.textContent='Fecha '+i;round.append(o)}render()}).catch(()=>{out.textContent='No se pudo cargar el fixture.'});
 </script>
 </body></html>
