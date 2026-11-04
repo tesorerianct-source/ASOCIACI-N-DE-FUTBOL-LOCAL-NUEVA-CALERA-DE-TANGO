@@ -250,8 +250,16 @@ function renderMultas(){
  for(const [id,m] of registros){
   const saldo=Math.max(0,m.monto-m.abonado);total+=m.monto;abonadoTotal+=m.abonado;
   const tr=document.createElement('tr');
-  const estado=m.abonado>=m.monto?'Pagado':m.abonado>0?'Abono parcial':'Pendiente';
-  for(const value of [m.fecha,m.vencimiento,m.concepto||'Multas',m.detalle,formatoCLP(m.monto),formatoCLP(m.abonado),formatoCLP(saldo),estado]){const td=document.createElement('td');td.textContent=value;tr.append(td)}
+  const hoy=new Date().toLocaleDateString('en-CA');
+  const pagado=Number(m.abonado)>=Number(m.monto)&&Number(m.monto)>0;
+  const vencido=!pagado&&!!m.vencimiento&&m.vencimiento<hoy;
+  const estado=pagado?'Pagado':vencido?'Vencido':Number(m.abonado)>0?'Abono parcial':'Pendiente';
+  tr.style.backgroundColor=pagado?'#e1f5e7':vencido?'#fde7e7':'';
+  for(const value of [m.fecha,m.vencimiento,m.concepto||'Multas',m.detalle,formatoCLP(m.monto),formatoCLP(m.abonado),formatoCLP(saldo),estado]){
+   const td=document.createElement('td');td.textContent=value;
+   if(value===estado){td.style.fontWeight='700';td.style.color=pagado?'#146c35':vencido?'#b42318':''}
+   tr.append(td);
+  }
   const actions=document.createElement('td');
   if(estado==='Pagado'){
    const receipt=document.createElement('button');receipt.type='button';receipt.textContent='Emitir comprobante';receipt.style.cssText='padding:6px 10px;background:#176c4b;margin:3px';
