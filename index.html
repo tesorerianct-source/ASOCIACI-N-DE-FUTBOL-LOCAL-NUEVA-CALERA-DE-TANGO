@@ -265,6 +265,22 @@ function renderMultas(){
    const receipt=document.createElement('button');receipt.type='button';receipt.textContent='Emitir comprobante';receipt.style.cssText='padding:6px 10px;background:#176c4b;margin:3px';
    receipt.addEventListener('click',()=>emitirComprobanteMulta(id,m));
    actions.append(receipt);
+   if(isAdmin()){
+    const enviar=document.createElement('button');enviar.type='button';enviar.textContent='✉️ Enviar comprobante por correo';
+    enviar.style.cssText='padding:6px 10px;margin:3px;background:#175ca0';
+    enviar.addEventListener('click',()=>{
+     if(!m.folio||!m.fechaPago){$('multas-estado').textContent='Primero presiona Emitir comprobante para asignar folio y generar el documento.';return}
+     const correo=prompt('Correo electrónico del club '+m.club+' (verifica el destinatario antes de enviar):','');
+     if(correo===null)return;
+     const destino=correo.trim();
+     if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(destino)){$('multas-estado').textContent='Ingresa un correo válido.';return}
+     const asunto='Comprobante de pago N.º '+String(m.folio).padStart(4,'0')+' - '+m.club;
+     const cuerpo='Estimados dirigentes de '+m.club+':\\n\\nJunto con saludar, informamos que se ha registrado el pago correspondiente a:\\nConcepto: '+(m.concepto||'Multas')+'\\nDetalle: '+m.detalle+'\\nMonto pagado: '+formatoCLP(m.abonado)+'\\nFecha de pago: '+m.fechaPago+'\\nFolio: '+String(m.folio).padStart(4,'0')+'\\n\\nSe adjunta el comprobante de pago.\\n\\nSaludos cordiales,\\nTesorería - Asociación Nueva Calera de Tango';
+     $('multas-estado').textContent='Se abrirá tu aplicación de correo. Adjunta manualmente el comprobante descargado y presiona Enviar. El sistema no lo envía automáticamente.';
+     window.location.href='mailto:'+encodeURIComponent(destino)+'?subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo);
+    });
+    actions.append(enviar);
+   }
   }
   if(isAdmin()){
    const edit=document.createElement('button');edit.type='button';edit.textContent='Editar';edit.style.padding='6px 10px';
