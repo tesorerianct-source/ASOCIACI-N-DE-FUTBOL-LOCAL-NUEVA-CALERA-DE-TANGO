@@ -81,6 +81,23 @@ let fixture=null,results={},user=null;
 function isAdmin(){return user&&user.email===adminEmail&&user.emailVerified}
 const CLUBES_MULTAS=['AROMOS DE CHENA','ISLOTE SNIPE','TRICOLOR DE CHENA','ESTRELLA DEL PACIFICO','ESTRELLA DE CARACAS','JUAN SOTO','ROSA DEL SUR','UNION LO HERRERA','HURACAN','RENACER LO HERRERA','JUVENTUD UNIDA','LOS BAJOS','ANTONIO ROMAN','DEFENSOR LOS SAUCES','SANTA INES','LA PORTADA','SAN AGUSTIN','ROTO CHILENO','UNION MUNICIPAL','SAN MIGUEL'];
 const multasData={};
+const backupButton=document.createElement('button');
+backupButton.type='button';
+backupButton.id='descargar-respaldo-multas';
+backupButton.textContent='⬇️ Descargar respaldo de multas (JSON)';
+backupButton.hidden=true;
+backupButton.style.margin='12px 0';
+document.getElementById('multas').querySelector('h2').after(backupButton);
+backupButton.addEventListener('click',()=>{
+ if(!isAdmin()){alert('Acceso exclusivo del administrador.');return}
+ const registros=Object.entries(multasData).map(([id,datos])=>({id,datos}));
+ if(!registros.length){alert('No hay multas cargadas. No se generó ningún respaldo.');return}
+ const respaldo={formato:'respaldo-multas-nct-v1',proyecto:'liga-nueva-calera-de-tango',coleccionOrigen:'resultados',fechaExportacion:new Date().toISOString(),cantidad:registros.length,multas:registros};
+ const blob=new Blob([JSON.stringify(respaldo,null,2)],{type:'application/json;charset=utf-8'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download='respaldo-multas-nct-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),30000);
+});
 const selectorMultas=$('club-multas');
 CLUBES_MULTAS.forEach(club=>{const option=document.createElement('option');option.value=club;option.textContent=club;selectorMultas.append(option)});
 const formatoCLP=n=>new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(n);
@@ -357,7 +374,7 @@ for(const el of [category,round,season])el.addEventListener('change',render);
 $('login-button').addEventListener('click',async()=>{status.textContent='Verificando acceso…';try{await signInWithEmailAndPassword(auth,adminEmail,$('admin-password').value);$('admin-password').value='';status.textContent='Sesión iniciada.'}catch(e){status.textContent='No se pudo iniciar sesión. Revisa la contraseña y vuelve a intentarlo.'}});
 $('logout-button').addEventListener('click',()=>signOut(auth));
 $('verify-button').addEventListener('click',async()=>{try{await sendEmailVerification(auth.currentUser);status.textContent='Te enviamos un enlace de verificación. Ábrelo desde tu correo y vuelve a iniciar sesión.'}catch(e){status.textContent='No se pudo enviar el enlace de verificación.'}});
-onAuthStateChanged(auth,u=>{user=u;document.querySelector('[data-view="multas"]').hidden=!isAdmin();if(!isAdmin()&&location.hash==='#multas')showView('posiciones');$('login-box').hidden=!!u;$('admin-panel').hidden=!u;$('admin-user').textContent=u?(isAdmin()?'Administrador autorizado: '+u.email:'Correo pendiente de verificación o cuenta no autorizada'):'';$('verify-button').hidden=!u||u.email!==adminEmail||u.emailVerified;$('save-results').hidden=!isAdmin();if(u&&!isAdmin())status.textContent='Debes verificar el correo administrador para poder guardar resultados.';renderMultas();render()});
+onAuthStateChanged(auth,u=>{user=u;backupButton.hidden=!isAdmin();document.querySelector('[data-view="multas"]').hidden=!isAdmin();if(!isAdmin()&&location.hash==='#multas')showView('posiciones');$('login-box').hidden=!!u;$('admin-panel').hidden=!u;$('admin-user').textContent=u?(isAdmin()?'Administrador autorizado: '+u.email:'Correo pendiente de verificación o cuenta no autorizada'):'';$('verify-button').hidden=!u||u.email!==adminEmail||u.emailVerified;$('save-results').hidden=!isAdmin();if(u&&!isAdmin())status.textContent='Debes verificar el correo administrador para poder guardar resultados.';renderMultas();render()});
 $('save-results').addEventListener('click',async()=>{
  if(!isAdmin()){status.textContent='Acceso no autorizado.';return}
  const inputs=[...editor.querySelectorAll('input')],writes=[];
