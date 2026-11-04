@@ -85,6 +85,14 @@ const migrarButton=document.createElement('button');
 migrarButton.type='button';migrarButton.id='migrar-multas-privadas';migrarButton.textContent='🔒 Copiar multas a colección privada';
 migrarButton.hidden=true;migrarButton.style.margin='12px 0 12px 10px';
 document.getElementById('multas').querySelector('h2').after(migrarButton);
+function mismosDatos(a,b){
+ const normalizar=x=>{
+  if(Array.isArray(x))return x.map(normalizar);
+  if(x&&typeof x==='object')return Object.fromEntries(Object.keys(x).sort().map(k=>[k,normalizar(x[k])]));
+  return x;
+ };
+ return JSON.stringify(normalizar(a))===JSON.stringify(normalizar(b));
+}
 migrarButton.addEventListener('click',async()=>{
  if(!isAdmin()){alert('Solo el administrador puede hacer esta operación.');return}
  const entries=Object.entries(multasData);
@@ -97,11 +105,11 @@ migrarButton.addEventListener('click',async()=>{
    const target=doc(db,'multas',id);
    const existing=await getDoc(target);
    if(existing.exists()){
-    if(JSON.stringify(existing.data())!==JSON.stringify(datos))throw Error('El registro '+id+' ya existe con datos diferentes. No se sobrescribió.');
+    if(!mismosDatos(existing.data(),datos))throw Error('El registro '+id+' ya existe con datos diferentes. No se sobrescribió.');
    }else{
     await setDoc(target,datos);
     const check=await getDoc(target);
-    if(!check.exists()||JSON.stringify(check.data())!==JSON.stringify(datos))throw Error('No se pudo verificar la copia '+id);
+    if(!check.exists()||!mismosDatos(check.data(),datos))throw Error('No se pudo verificar la copia '+id);
    }
    copied++;
    migrarButton.textContent='Copiando multas: '+copied+' de '+entries.length;
