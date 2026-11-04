@@ -327,7 +327,7 @@ async function emitirComprobanteMulta(id,m){
     return siguiente;
    });
    $('multas-estado').textContent='Comprobante N.º '+String(folio).padStart(4,'0')+' emitido correctamente.';
-  }catch(error){$('multas-estado').textContent='No se pudo asignar el folio. Revisa el acceso de Tesorería y vuelve a intentar.';return}
+  }catch(error){console.error('Error al asignar folio:',error);$('multas-estado').textContent='No se pudo asignar el folio ('+(error?.code||'error')+'): '+(error?.message||'Revisa los permisos de Firebase.');return}
  }
  const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const fecha=value=>{const p=String(value).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:value};
