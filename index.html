@@ -21,7 +21,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}#standings{overflow-x:a
 .empty{text-align:center;padding:28px 12px;color:var(--muted)}.pill{display:inline-block;background:#e8f3ed;color:var(--green);padding:4px 9px;border-radius:20px;font-size:12px;font-weight:bold}
 footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 @media(max-width:760px){.wide,.side{grid-column:1/-1}.card{padding:15px}table{font-size:12px}th,td{padding:8px 5px}}
-</style>
+.fixture-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px}.fixture-fecha{border:1px solid #cddde9;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 2px 8px #102a4312}.fixture-fecha h3{margin:0;background:#1769aa;color:#fff;padding:12px 16px;font-size:17px}.fixture-fecha h4{margin:0;background:#eaf3fa;color:#123b5c;padding:8px 14px;font-size:14px}.fixture-table{width:100%;border-collapse:collapse;font-size:13px}.fixture-table th{background:#f0f5f9;font-size:11px;color:#25475e}.fixture-table th,.fixture-table td{padding:9px 7px;border:1px solid #dce4ea;text-align:left}.fixture-table th:first-child,.fixture-table td:first-child{width:30%;font-weight:bold}.fixture-table tbody tr:nth-child(even){background:#f8fbfd}.fixture-table input{width:100%;min-width:80px;padding:7px;font-size:12px}</style>
 </head>
 <body>
 <header><div class="wrap">
@@ -437,22 +437,42 @@ function renderEditor(){
  });
  }
 }
+const canchaData={};
 function render(){
  updateRule();
  if(!fixture||season.value!=='2026'){out.textContent='No hay fixture disponible para esta temporada.';editor.replaceChildren();standings.textContent='Sin programación disponible.';return}
  $('save-results').hidden=!isAdmin();$('save-pending').hidden=!isAdmin();
  {
-  const wrap=document.createDocumentFragment();
+  const wrap=document.createElement('div');wrap.className='fixture-grid';
   for(let fecha=1;fecha<=9;fecha++){
-   const dateHeading=document.createElement('h3');dateHeading.textContent='FECHA '+fecha;dateHeading.style.cssText='background:#1769aa;color:white;padding:10px;border-radius:6px;margin:18px 0 8px';wrap.append(dateHeading);
+   const card=document.createElement('section');card.className='fixture-fecha';
+   const dateHeading=document.createElement('h3');dateHeading.textContent='📅 FECHA '+fecha;card.append(dateHeading);
    for(const grupo of ['A','B']){
-    const heading=document.createElement('h4');heading.textContent='Grupo '+grupo;heading.style.margin='12px 0 5px';wrap.append(heading);
-    const table=document.createElement('table');table.innerHTML='<thead><tr><th>Local</th><th>Visita</th></tr></thead>';
+    const heading=document.createElement('h4');heading.textContent='GRUPO '+grupo;card.append(heading);
+    const table=document.createElement('table');table.className='fixture-table';
+    table.innerHTML='<thead><tr><th>CANCHA</th><th>CLUB LOCAL</th><th>CLUB VISITA</th></tr></thead>';
     const body=document.createElement('tbody');
     const matches=fixture?.grupos.find(g=>g.id===grupo)?.fechas.find(f=>f.numero===fecha)?.partidos||[];
-    matches.forEach(p=>{const tr=document.createElement('tr');[p.local,p.visita].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});body.append(tr)});
-    table.append(body);wrap.append(table);
+    matches.forEach((p,i)=>{
+     const tr=document.createElement('tr'),id='cancha_2026_'+grupo+'_'+fecha+'_'+i;
+     const tdCancha=document.createElement('td'),cancha=canchaData[id]?.nombre||'Por confirmar';
+     if(isAdmin()){
+      const input=document.createElement('input');input.type='text';input.maxLength=100;input.value=cancha==='Por confirmar'?'':cancha;input.placeholder='Ingresar cancha';input.setAttribute('aria-label','Cancha de '+p.local+' contra '+p.visita);
+      input.addEventListener('change',async()=>{
+       const nombre=input.value.trim();input.disabled=true;
+       try{if(!isAdmin())throw Error('Sin permiso');await setDoc(doc(db,'resultados',id),{tipo:'cancha',nombre,grupo,fecha,partido:i});}
+       catch(e){alert('No se pudo guardar la cancha. Revisa la conexión y tu sesión de Tesorería.')}
+       finally{input.disabled=false}
+      });
+      tdCancha.append(input);
+     }else{tdCancha.textContent=cancha}
+     tr.append(tdCancha);
+     for(const nombre of [p.local,p.visita]){const td=document.createElement('td');td.textContent=nombre;tr.append(td)}
+     body.append(tr);
+    });
+    table.append(body);card.append(table);
    }
+   wrap.append(card);
   }
   out.replaceChildren(wrap);
  }
@@ -639,7 +659,7 @@ $('save-pending').addEventListener('click',async()=>{
   status.textContent='Fecha '+fecha+' guardada como pendiente. No se asignaron goles ni puntos y no se modificaron resultados existentes.';
  }catch(e){status.textContent='No se pudo guardar la fecha pendiente. Revisa la conexión y los permisos.'}
 });
-onSnapshot(collection(db,'resultados'),snapshot=>{results={};snapshot.forEach(d=>{const v=d.data();if(v.tipo==='multa')return;if(v.oficial===true||v.sinPuntos===true||(Number.isInteger(v.local)&&Number.isInteger(v.visita)&&v.local>=0&&v.visita>=0))results[d.id]=v});render()},()=>{status.textContent='No se pudo consultar la base de datos. Comprueba la conexión y los permisos.'});
+onSnapshot(collection(db,'resultados'),snapshot=>{results={};for(const id of Object.keys(canchaData))delete canchaData[id];snapshot.forEach(d=>{const v=d.data();if(v.tipo==='cancha'){canchaData[d.id]=v;return}if(v.tipo==='multa')return;if(v.oficial===true||v.sinPuntos===true||(Number.isInteger(v.local)&&Number.isInteger(v.visita)&&v.local>=0&&v.visita>=0))results[d.id]=v});render()},()=>{status.textContent='No se pudo consultar la base de datos. Comprueba la conexión y los permisos.'});
 let unsubscribePrivateMultas=null;
 onAuthStateChanged(auth,async u=>{
  if(unsubscribePrivateMultas){unsubscribePrivateMultas();unsubscribePrivateMultas=null}
