@@ -111,7 +111,7 @@ function actualizarClubesAnuario(){
 }
 function registrosAnuarioFiltrados(){
  const texto=normalizarAnuario(anuarioBusquedaAplicada),club=$('anuario-filtro-club').value;
- const busquedaRut=texto.length>=7&&/^[0-9]+[0-9K]$/.test(texto);
+ const busquedaRut=/^[0-9.\-Kk\s]+$/.test(anuarioBusquedaAplicada.trim())&&/[0-9]/.test(anuarioBusquedaAplicada);
  return (isAdmin()||clubAutorizado?Object.entries(anuarioData):[])
   .filter(([id,v])=>(!club||v.club===club)&&(!texto||(busquedaRut?normalizarAnuario(v.rut)===texto:[v.nombre,v.rut].some(valor=>normalizarAnuario(valor).includes(texto)))))
   .sort((a,b)=>String(a[1].nombre||'').localeCompare(String(b[1].nombre||''),'es'));
@@ -178,6 +178,7 @@ CLUBES_MULTAS.forEach(club=>{const op=document.createElement('option');op.value=
 $('anuario-boton-buscar').addEventListener('click',()=>{anuarioPagina=0;anuarioBusquedaAplicada=$('anuario-buscar').value.trim();renderAnuario()});
 $('anuario-anterior').addEventListener('click',()=>{anuarioPagina=Math.max(0,anuarioPagina-1);renderAnuario()});
 $('anuario-siguiente').addEventListener('click',()=>{anuarioPagina++;renderAnuario()});
+$('anuario-buscar').addEventListener('input',()=>{anuarioPagina=0;anuarioBusquedaAplicada=$('anuario-buscar').value.trim();renderAnuario()});
 $('anuario-buscar').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('anuario-boton-buscar').click()}});
 $('anuario-cancelar').addEventListener('click',cancelarAnuario);
 let anuarioImportRows=[];
