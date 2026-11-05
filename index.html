@@ -226,11 +226,12 @@ $('anuario-guardar').addEventListener('click',async()=>{
 });
 let unsubscribeAnuario=null;
 onAuthStateChanged(auth,async u=>{
+ user=u;
  if(unsubscribeAnuario){unsubscribeAnuario();unsubscribeAnuario=null}
  for(const id of Object.keys(anuarioData))delete anuarioData[id];
  anuarioCargando=!!u;renderAnuario();
  if(!u)return;
- let autorizado=isAdmin();
+ let autorizado=!!(u&&u.email===adminEmail&&u.emailVerified);
  if(!autorizado){
   try{
    const perfil=await getDoc(doc(db,'usuarios',u.uid));
