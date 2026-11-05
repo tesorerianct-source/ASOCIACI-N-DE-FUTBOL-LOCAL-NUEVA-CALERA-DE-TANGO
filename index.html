@@ -181,7 +181,7 @@ $('anuario-guardar').addEventListener('click',async()=>{
   await setDoc(doc(db,'anuario_privado',id),datos);
   $('anuario-estado').textContent='Jugador guardado correctamente.';
   cancelarAnuario();
- }catch(e){$('anuario-estado').textContent='No se pudo guardar. Comprueba tu sesión de administrador.'}
+ }catch(e){console.error('Error al guardar jugador en anuario_privado:',e);const codigo=e?.code||'error-desconocido';$('anuario-estado').textContent='No se pudo guardar ('+codigo+'). '+(codigo==='permission-denied'?'Firebase rechazó los permisos: revisa la sesión verificada de Tesorería y las reglas publicadas.':codigo==='resource-exhausted'?'Se alcanzó el límite de uso de Firebase.':codigo==='unavailable'?'Firebase no está disponible temporalmente.':'Revisa la conexión y vuelve a intentarlo.')}
 });
 let unsubscribeAnuario=null;
 onAuthStateChanged(auth,async u=>{
