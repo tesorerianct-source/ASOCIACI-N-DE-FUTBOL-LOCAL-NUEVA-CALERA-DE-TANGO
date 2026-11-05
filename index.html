@@ -51,7 +51,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
   <section class="card full view-section" id="posiciones"><h2>🏆 Tabla de posiciones</h2><button type="button" id="descargar-tablas-2-hojas" style="margin:0 0 12px;background:#1769aa">📄 Abrir descarga de tablas (PDF · 2 hojas)</button><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
   <section class="card full view-section" id="goleadores" hidden>
 <h2>📖 Anuario de jugadores</h2><p class="muted">Consulta privada: Tesorería puede agregar y editar jugadores; los clubes autorizados solo pueden consultar.</p><p id="anuario-acceso" class="notice">Inicia sesión en Administración o Pagos y devoluciones para consultar el Anuario.</p>
-<div id="anuario-form" class="notice" hidden><h3>Agregar o editar jugador</h3>
+<div id="anuario-form" class="notice" hidden><h3>Importar anuario desde Excel</h3><p>Selecciona el Excel oficial. Revisa el número de jugadores antes de confirmar la carga. Solo Tesorería puede importar.</p><input id="anuario-excel" type="file" accept=".xlsx,.xls"><button id="anuario-importar" type="button">Revisar Excel</button><p id="anuario-importacion-estado" role="status"></p><h3>Agregar o editar jugador</h3>
 <div class="toolbar">
 <div class="field"><label for="anuario-nombre">Nombre del jugador</label><input id="anuario-nombre" maxlength="160" required></div>
 <div class="field"><label for="anuario-rut">R.U.T.</label><input id="anuario-rut" maxlength="16" placeholder="12.345.678-9"></div>
@@ -77,7 +77,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendEmailVerification} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {getFirestore,doc,getDoc,setDoc,collection,query,where,onSnapshot,runTransaction} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {getFirestore,doc,getDoc,setDoc,collection,query,where,onSnapshot,runTransaction,writeBatch} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 const app=initializeApp({apiKey:"AIzaSyBN0upeHSSumkUFvYEb9x9e0ti81nH9rSo",authDomain:"liga-nueva-calera-de-tango.firebaseapp.com",projectId:"liga-nueva-calera-de-tango",storageBucket:"liga-nueva-calera-de-tango.firebasestorage.app",messagingSenderId:"22682983108",appId:"1:22682983108:web:cb7b03b840977999164791"});
 const auth=getAuth(app),db=getFirestore(app),adminEmail='tesoreria.nct@gmail.com';
 function showView(view){
@@ -132,6 +132,44 @@ function cancelarAnuario(){
 CLUBES_MULTAS.forEach(club=>{const op=document.createElement('option');op.value=club;op.textContent=club;$('anuario-club').append(op)});
 $('anuario-buscar').addEventListener('input',renderAnuario);
 $('anuario-cancelar').addEventListener('click',cancelarAnuario);
+let anuarioImportRows=[];
+$('anuario-importar').addEventListener('click',async()=>{
+ if(!isAdmin())return;
+ const estado=$('anuario-importacion-estado'),btn=$('anuario-importar'),file=$('anuario-excel').files[0];
+ if(!file){estado.textContent='Selecciona el archivo Excel.';return}
+ btn.disabled=true;
+ try{
+  estado.textContent='Leyendo Excel…';
+  if(!window.XLSX){await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';script.onload=resolve;script.onerror=reject;document.head.append(script)})}
+  const wb=window.XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+  const rows=window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+  const header=rows.findIndex(r=>String(r[0]).toUpperCase().includes('NOMBRE DEL JUGADOR'));
+  if(header<0)throw Error('No se encontraron los encabezados del Anuario.');
+  const fecha=x=>{if(x instanceof Date&&!isNaN(x))return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');return String(x||'').trim()};
+  const campos=['nombre','rut','nacimiento','federac','categoria','club','sancion','cumple','informacion'];
+  const registros=new Map();
+  for(const row of rows.slice(header+1)){
+   const datos={tipo:'anuario'};campos.forEach((c,i)=>datos[c]=i===2||i===3?fecha(row[i]):String(row[i]??'').trim());
+   if(!datos.nombre||!datos.club)continue;
+   const rut=datos.rut.toUpperCase().replace(/[^0-9K]/g,'');
+   const clave=rut?'rut_'+rut:'sinrut_'+datos.nombre.toUpperCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^A-Z0-9]/g,'_')+'_'+datos.club.toUpperCase().replace(/[^A-Z0-9]/g,'_');
+   registros.set(clave,datos);
+  }
+  anuarioImportRows=[...registros];
+  estado.textContent='Se encontraron '+anuarioImportRows.length+' jugadores únicos. Los RUT repetidos dentro del archivo se consolidarán. La importación puede generar costos y requiere permisos de Firestore.';
+  if(!confirm('¿Importar '+anuarioImportRows.length+' jugadores al Anuario privado? Los registros con el mismo RUT se actualizarán. Esta operación puede tardar varios minutos.'))return;
+  let completos=0;
+  for(let i=0;i<anuarioImportRows.length;i+=200){
+   if(!isAdmin())throw Error('La sesión de administrador terminó.');
+   const batch=writeBatch(db);
+   for(const [id,datos] of anuarioImportRows.slice(i,i+200))batch.set(doc(db,'anuario_privado',id),datos,{merge:true});
+   await batch.commit();completos+=Math.min(200,anuarioImportRows.length-i);
+   estado.textContent='Importados '+completos+' de '+anuarioImportRows.length+'. No cierres esta ventana.';
+  }
+  estado.textContent='Importación terminada: '+completos+' jugadores procesados.';
+ }catch(e){estado.textContent='La importación se detuvo: '+(e.message||e)+'. Los lotes anteriores pueden haber quedado guardados.'}
+ finally{btn.disabled=false}
+});
 $('anuario-guardar').addEventListener('click',async()=>{
  if(!isAdmin())return;
  const datos={tipo:'anuario'};
