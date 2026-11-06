@@ -121,8 +121,25 @@ const clubFields=[['nombre','Nombre oficial'],['fundacion','Fecha de fundación'
 const clubTiles=[...document.querySelectorAll('#inicio .club-tile')];
 let clubProfileUser=null;
 const clubCanEdit=()=>!!(clubProfileUser&&clubProfileUser.email===adminEmail&&clubProfileUser.emailVerified);
+function updateClubImage(tile){
+ const club=tile.querySelector('strong').textContent,logo=clubInformation[club]?.escudo;
+ let img=tile.querySelector('.club-logo');
+ if(logo&&/^data:image\/(jpeg|png|webp);base64,/.test(logo)){
+  if(!img){img=document.createElement('img');img.className='club-logo';img.alt='Escudo de '+club;tile.insertBefore(img,tile.querySelector('strong'));}
+  img.src=logo;tile.classList.remove('no-image');
+ }else if(img){img.remove();tile.classList.add('no-image');}
+}
+function compressClubImage(file){
+ return new Promise((resolve,reject)=>{
+  if(!file.type.startsWith('image/')){reject(new Error('Selecciona una imagen JPG, PNG o WEBP.'));return;}
+  if(file.size>10*1024*1024){reject(new Error('La imagen no puede superar 10 MB.'));return;}
+  const image=new Image(),url=URL.createObjectURL(file);
+  image.onload=()=>{URL.revokeObjectURL(url);const canvas=document.createElement('canvas');const scale=Math.min(1,360/Math.max(image.width,image.height));canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);const result=canvas.toDataURL('image/jpeg',0.78);if(result.length>450000)reject(new Error('La imagen es demasiado grande.'));else resolve(result);};
+  image.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('No se pudo leer la imagen.'));};image.src=url;
+ });
+}
 function renderClubProfile(tile){
- const detail=tile.querySelector('.club-detail');if(!detail||detail.hidden)return;
+ updateClubImage(tile);const detail=tile.querySelector('.club-detail');if(!detail||detail.hidden)return;
  const club=tile.querySelector('strong').textContent,info=clubInformation[club]||{};
  detail.replaceChildren();
  const dl=document.createElement('dl');
@@ -137,10 +154,15 @@ function renderClubProfile(tile){
    const msg=document.createElement('p');msg.setAttribute('role','status');form.append(save,cancel,msg);
    form.addEventListener('submit',async ev=>{ev.preventDefault();if(!clubCanEdit()){msg.textContent='Debes iniciar sesión como tesorería.';return;}save.disabled=true;msg.textContent='Guardando...';
     const data=Object.fromEntries(clubFields.map(([key])=>[key,inputs[key].value.trim()]));
-    try{await setDoc(doc(db,'fichas_clubes',club),data);clubInformation[club]=data;renderClubProfile(tile);}
+    try{await setDoc(doc(db,'fichas_clubes',club),data,{merge:true});clubInformation[club]={...clubInformation[club],...data};renderClubProfile(tile);}
     catch(err){msg.textContent='No se pudo guardar ('+(err.code||'error')+'). Revisa los permisos de Firestore.';save.disabled=false;}
    });detail.append(form);
   });detail.append(edit);
+  const logoLabel=document.createElement('label');logoLabel.className='club-logo-upload';logoLabel.textContent='🖼️ Cambiar escudo o fotografía';
+  const logoInput=document.createElement('input');logoInput.type='file';logoInput.accept='image/png,image/jpeg,image/webp';logoInput.style.display='block';logoInput.style.maxWidth='100%';logoLabel.append(logoInput);detail.append(logoLabel);
+  const logoStatus=document.createElement('p');logoStatus.setAttribute('role','status');detail.append(logoStatus);
+  logoInput.addEventListener('change',async()=>{const file=logoInput.files?.[0];if(!file)return;if(!clubCanEdit()){logoStatus.textContent='Debes iniciar sesión como tesorería.';return;}logoInput.disabled=true;logoStatus.textContent='Preparando y guardando imagen...';try{const escudo=await compressClubImage(file);await setDoc(doc(db,'fichas_clubes',club),{escudo},{merge:true});clubInformation[club]={...clubInformation[club],escudo};updateClubImage(tile);logoStatus.textContent='Escudo guardado correctamente.';}catch(e){logoStatus.textContent='No se pudo guardar: '+(e.code||e.message||'error')+'.';}finally{logoInput.disabled=false;logoInput.value='';}});
+
  }
 }
 clubTiles.forEach(tile=>{
