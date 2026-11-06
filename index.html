@@ -72,7 +72,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
   <span class="pill">Clausura 2026</span>
  </div>
  <div class="grid">
-  <section class="card full view-section" id="finales" hidden><h2>🏆 Finales de la Asociación</h2><p class="muted">Fotografías oficiales de las finales por serie. Selecciona una categoría para ver su imagen.</p><div id="finales-grid" class="finales-grid"></div><p id="finales-estado" role="status" class="muted"></p></section>
+  <section class="card full view-section" id="finales" hidden><h2>🏆 Finales de la Asociación</h2><p class="muted">Fotografías oficiales por serie de la Final Apertura, Final Clausura y Final Super Copa.</p><div id="finales-grid" class="finales-grid"></div><p id="finales-estado" role="status" class="muted"></p></section>
 <section class="card full view-section" id="fixture" hidden><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div id="fixture-content" class="empty">Cargando fixture Clausura 2026…</div></section>
   <section class="card full view-section" id="admin" hidden><h2>🔐 Administración</h2><div id="login-box"><p>Solo la tesorería puede modificar los resultados oficiales.</p><label for="admin-email">Correo administrador</label><input id="admin-email" type="email" autocomplete="username" value="tesoreria.nct@gmail.com" readonly style="width:100%"><label for="admin-password">Contraseña</label><input id="admin-password" type="password" autocomplete="current-password" style="width:100%"><button id="login-button" type="button">Ingresar</button></div><div id="admin-panel" hidden><p id="admin-user"></p><button id="verify-button" type="button" hidden>Enviar correo de verificación</button><button id="logout-button" type="button">Cerrar sesión</button><p>Selecciona la fecha. Aquí aparecen juntos el Grupo A y el Grupo B para ingresar los goles y las bonificaciones. Las casillas vacías quedan pendientes.</p><div id="editor"></div><button id="save-results" type="button">Guardar resultados oficiales</button> <button id="save-pending" type="button" style="background:#526a7e;margin-top:8px">Guardar fecha sin resultados</button></div><p id="save-status" class="muted" role="status"></p></section>
   <section class="card full view-section" id="posiciones"><h2>🏆 Tabla de posiciones</h2><button type="button" id="descargar-tablas-2-hojas" style="margin:0 0 12px;background:#1769aa">📄 Abrir descarga de tablas (PDF · 2 hojas)</button><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
@@ -199,28 +199,52 @@ document.getElementById('asociacion-imagen').addEventListener('change',async e=>
 onSnapshot(doc(db,'fichas_clubes','ASOCIACION'),snap=>{associationData={...associationDefaults,...(snap.exists()?snap.data():{})};renderAssociation();},err=>{console.warn('Ficha de Asociación:',err.code);});
 
 
-// Galería pública de finales; subida reservada a Tesorería.
+// Tres campeonatos con fotografías independientes por serie; Tesorería administra.
 const finalesSeries=['Tercera adulta','Senior','Juvenil','Femenino','Súper Senior','Primera adulta','Segunda adulta','Dorados','3ra infantil','2da infantil'];
+const finalesTorneos=[['apertura','Final Apertura'],['clausura','Final Clausura'],['supercopa','Final Super Copa']];
 const finalesData={};
 function renderFinales(){
- const grid=document.getElementById('finales-grid');grid.replaceChildren();
- finalesSeries.forEach((serie,i)=>{
-  const card=document.createElement('article');card.className='finales-card';
-  const h=document.createElement('h3');h.textContent=serie;card.append(h);
-  const record=finalesData[String(i)]||{};
-  if(record.foto&&/^data:image\/(jpeg|png|webp);base64,/.test(record.foto)){const img=document.createElement('img');img.src=record.foto;img.alt='Fotografía de la final de '+serie;card.append(img);}
-  else{const empty=document.createElement('div');empty.className='finales-empty';empty.textContent='📷 Fotografía por publicar';card.append(empty);}
-  if(clubCanEdit()){
-   const label=document.createElement('label');label.textContent='Subir o reemplazar fotografía';
-   const input=document.createElement('input');input.type='file';input.accept='image/png,image/jpeg,image/webp';label.append(input);card.append(label);
-   const msg=document.createElement('p');msg.className='finales-msg';msg.setAttribute('role','status');card.append(msg);
-   input.addEventListener('change',async()=>{const file=input.files?.[0];if(!file)return;if(!clubCanEdit()){msg.textContent='Solo Tesorería puede modificar.';return;}input.disabled=true;msg.textContent='Guardando fotografía...';try{const foto=await compressClubImage(file);await setDoc(doc(db,'finales_fotos',String(i)),{serie,foto},{merge:true});finalesData[String(i)]={serie,foto};renderFinales();}catch(err){msg.textContent='No se pudo guardar: '+(err.code||err.message||'error');input.disabled=false;}});
-  }
-  grid.append(card);
+ const grid=document.getElementById('finales-grid');if(!grid)return;grid.replaceChildren();
+ finalesTorneos.forEach(([torneo,titulo])=>{
+  const section=document.createElement('section');section.style.gridColumn='1/-1';
+  const heading=document.createElement('h3');heading.textContent='🏆 '+titulo;heading.style.margin='18px 0 12px';section.append(heading);
+  const cards=document.createElement('div');cards.className='finales-grid';
+  finalesSeries.forEach((serie,i)=>{
+   // Conservar las fotos de la sección anterior como Apertura.
+   const id=torneo==='apertura'?String(i):torneo+'_'+i;
+   const card=document.createElement('article');card.className='finales-card';
+   const h=document.createElement('h4');h.textContent=serie;card.append(h);
+   const record=finalesData[id]||{};
+   if(record.foto&&/^data:image\/(jpeg|png|webp);base64,/.test(record.foto)){
+    const img=document.createElement('img');img.src=record.foto;img.alt='Fotografía '+titulo+' · '+serie;card.append(img);
+   }else{
+    const empty=document.createElement('div');empty.className='finales-empty';empty.textContent='📷 Fotografía por publicar';card.append(empty);
+   }
+   if(clubCanEdit()){
+    const label=document.createElement('label');label.textContent='Subir o reemplazar fotografía';
+    const input=document.createElement('input');input.type='file';input.accept='image/png,image/jpeg,image/webp';label.append(input);card.append(label);
+    const msg=document.createElement('p');msg.className='finales-msg';msg.setAttribute('role','status');card.append(msg);
+    input.addEventListener('change',async()=>{
+     const file=input.files?.[0];if(!file)return;
+     if(!clubCanEdit()){msg.textContent='Solo Tesorería puede modificar.';return;}
+     input.disabled=true;msg.textContent='Guardando fotografía...';
+     try{
+      const foto=await compressClubImage(file);
+      await setDoc(doc(db,'finales_fotos',id),{torneo,serie,foto},{merge:true});
+      finalesData[id]={torneo,serie,foto};renderFinales();
+     }catch(err){msg.textContent='No se pudo guardar: '+(err.code||err.message||'error');input.disabled=false;}
+    });
+   }
+   cards.append(card);
+  });
+  section.append(cards);grid.append(section);
  });
 }
 onAuthStateChanged(auth,()=>renderFinales());
-onSnapshot(collection(db,'finales_fotos'),snapshot=>{snapshot.forEach(d=>finalesData[d.id]=d.data());renderFinales();},err=>{document.getElementById('finales-estado').textContent='Las fotografías requieren permisos de lectura en Firestore ('+(err.code||'error')+').';});
+onSnapshot(collection(db,'finales_fotos'),snapshot=>{
+ Object.keys(finalesData).forEach(id=>delete finalesData[id]);
+ snapshot.forEach(d=>finalesData[d.id]=d.data());renderFinales();
+},err=>{document.getElementById('finales-estado').textContent='No se pudieron cargar las fotografías ('+(err.code||'error')+').';});
 const initialView=location.hash.slice(1);
 showView(document.getElementById(initialView)?.classList.contains('view-section')?initialView:'inicio');
 window.addEventListener('hashchange',()=>{const view=location.hash.slice(1);if(document.getElementById(view)?.classList.contains('view-section'))showView(view)});
