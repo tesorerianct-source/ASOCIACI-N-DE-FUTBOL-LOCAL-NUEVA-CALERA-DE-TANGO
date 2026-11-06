@@ -30,7 +30,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 </head>
 <body>
 <header><div class="wrap">
- <div class="brand"><div class="crest">⚽</div><div><h1>Asociación Nueva Calera de Tango</h1><p>Fútbol local · Programación y resultados oficiales</p></div></div>
+ <div class="brand"><div class="crest" id="header-association-crest" aria-label="Escudo de la Asociación">⚽</div><div><h1>Asociación Nueva Calera de Tango</h1><p>Fútbol local · Programación y resultados oficiales</p></div></div>
 </div></header>
 <main class="wrap">
  <div class="site-layout">
@@ -186,6 +186,8 @@ function renderAssociation(){
   associationForm.elements.namedItem(key).value=associationData[key]||associationDefaults[key];
  }
  const logo=document.getElementById('asociacion-logo');logo.replaceChildren();
+ const headerCrest=document.getElementById('header-association-crest');headerCrest.replaceChildren();
+ if(associationData.escudo&&/^data:image\/(jpeg|png|webp);base64,/.test(associationData.escudo)){const headerImg=document.createElement('img');headerImg.src=associationData.escudo;headerImg.alt='Escudo oficial de la Asociación';headerImg.style.cssText='width:100%;height:100%;object-fit:contain;border-radius:50%';headerCrest.append(headerImg);}else{headerCrest.textContent='⚽';}
  if(associationData.escudo&&/^data:image\/(jpeg|png|webp);base64,/.test(associationData.escudo)){const img=document.createElement('img');img.src=associationData.escudo;img.alt='Escudo de la Asociación Nueva Calera de Tango';img.style.cssText='max-width:240px;max-height:240px;object-fit:contain';logo.append(img);}
  else{const placeholder=document.createElement('span');placeholder.textContent='⚽';placeholder.style.fontSize='76px';logo.append(placeholder);}
  document.getElementById('asociacion-edicion').hidden=!clubCanEdit();
