@@ -24,6 +24,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 .fixture-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px}.fixture-fecha{border:1px solid #cddde9;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 2px 8px #102a4312}.fixture-fecha h3{margin:0;background:#1769aa;color:#fff;padding:12px 16px;font-size:17px}.fixture-fecha h4{margin:0;background:#eaf3fa;color:#123b5c;padding:8px 14px;font-size:14px}.fixture-table{width:100%;border-collapse:collapse;font-size:13px}.fixture-table th{background:#f0f5f9;font-size:11px;color:#25475e}.fixture-table th,.fixture-table td{padding:9px 7px;border:1px solid #dce4ea;text-align:left}.fixture-table th:first-child,.fixture-table td:first-child{width:30%;font-weight:bold}.fixture-table tbody tr:nth-child(even){background:#f8fbfd}.fixture-table input{width:100%;min-width:80px;padding:7px;font-size:12px}
 /* Portada institucional: clubes en orden alfabético */
 .home-hero{background:linear-gradient(120deg,#102a43,#16624b);color:#fff;border-radius:16px;padding:30px 24px;text-align:center;margin-bottom:20px}.home-hero h2{color:white;font-size:clamp(22px,3vw,30px)}.home-hero p{color:#e1f0ea}.club-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:14px}.club-tile{border:1px solid #dce4ea;border-radius:13px;background:#fff;padding:14px 8px;text-align:center;min-height:175px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}.club-tile img{width:100px;height:100px;object-fit:contain}.club-tile strong{font-size:13px;line-height:1.3}.club-tile .club-fallback{display:none;font-size:55px;color:#1769aa}.club-tile.no-image img{display:none}.club-tile.no-image .club-fallback{display:block}.home-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-top:14px}.home-links a{display:block;background:#eaf3fa;color:#123b5c;text-decoration:none;border-radius:10px;padding:14px;text-align:center;font-weight:bold}.home-links a:hover{background:#d5e9f7}
+.club-tile{cursor:pointer}.club-tile:focus-visible{outline:3px solid #1769aa;outline-offset:3px}.club-profile{margin-top:18px;padding:20px;border:1px solid #b6d3e6;border-radius:12px;background:#f2f8fc}.club-profile[hidden]{display:none!important}.club-profile h3{margin:0 0 12px;color:#102a43}.club-profile dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:0}.club-profile dl div{padding:12px;background:white;border-radius:8px}.club-profile dt{font-size:13px;font-weight:bold;color:#49677d}.club-profile dd{margin:5px 0 0}.club-profile-close{float:right;font-size:13px;padding:7px 10px}
 </style>
 </head>
 <body>
@@ -62,7 +63,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 <div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Santa Inés</strong></div>
 <div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Tricolor de Chena</strong></div>
 <div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Unión Lo Herrera</strong></div>
-<div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Unión Municipal</strong></div></div></section></section>
+<div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Unión Municipal</strong></div></div><div id="club-profile" class="club-profile" hidden aria-live="polite"><button type="button" id="close-club-profile" class="club-profile-close">Cerrar ficha ✕</button><h3 id="club-profile-name"></h3><dl><div><dt>Fecha de fundación</dt><dd>Por completar</dd></div><div><dt>Presidente actual</dt><dd>Por completar</dd></div><div><dt>Cancha de local</dt><dd>Por completar</dd></div><div><dt>Comuna</dt><dd>Por completar</dd></div></dl></div></section></section>
  <div class="toolbar" id="filters-toolbar">
   <div class="field"><label for="season">TEMPORADA</label><select id="season"><option>2026</option><option>2027</option></select></div>
   <div class="field"><label for="round">FECHA</label><select id="round"></select></div><div class="field"><label for="category">CATEGORÍA · BUSCAR</label><select id="category"><option value="todas">Todas las tablas</option><option value="general">Tabla general</option><option>Dorados</option><option>Súper Senior</option><option>Senior</option><option>Tercera Infantil</option><option>Femenino</option><option>Segunda Infantil</option><option>Juvenil</option><option>Tercera Adulta</option><option>Segunda Adulta</option><option>Primera Adulta</option></select></div>
@@ -112,6 +113,17 @@ function showView(view){
  if(location.hash!=='#'+view)history.replaceState(null,'','#'+view);
 }
 document.querySelectorAll('.side-menu button').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
+
+// Fichas institucionales de los 20 clubes (datos pendientes de confirmación).
+const clubProfile=document.getElementById('club-profile');
+const clubProfileName=document.getElementById('club-profile-name');
+document.querySelectorAll('#inicio .club-tile').forEach(tile=>{
+ tile.setAttribute('role','button');tile.setAttribute('tabindex','0');tile.setAttribute('aria-label','Ver información del club '+tile.querySelector('strong').textContent);
+ const open=()=>{clubProfileName.textContent=tile.querySelector('strong').textContent;clubProfile.hidden=false;clubProfile.scrollIntoView({behavior:'smooth',block:'nearest'});};
+ tile.addEventListener('click',open);
+ tile.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+});
+document.getElementById('close-club-profile').addEventListener('click',()=>{clubProfile.hidden=true;});
 const initialView=location.hash.slice(1);
 showView(document.getElementById(initialView)?.classList.contains('view-section')?initialView:'inicio');
 window.addEventListener('hashchange',()=>{const view=location.hash.slice(1);if(document.getElementById(view)?.classList.contains('view-section'))showView(view)});
