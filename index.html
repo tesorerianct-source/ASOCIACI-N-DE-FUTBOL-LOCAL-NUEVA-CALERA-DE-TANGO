@@ -45,7 +45,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
  <button type="button" data-view="admin">🔐 Administración</button>
  </aside>
  <div class="site-content">
-<section class="view-section" id="inicio"><div class="home-hero"><h2>Bienvenidos a la Asociación Nueva Calera de Tango</h2><p>20 clubes unidos por el fútbol local. Conoce nuestras instituciones y consulta la información oficial de la competencia.</p></div><section class="card"><h2>⚽ Nuestros 20 clubes</h2><p class="muted">Instituciones afiliadas, presentadas en orden alfabético.</p><div class="club-grid"><div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Antonio Román</strong></div>
+<section class="view-section" id="inicio"><div class="home-hero"><h2>Bienvenidos a la Asociación Nueva Calera de Tango</h2><p>20 clubes unidos por el fútbol local. Conoce nuestras instituciones y consulta la información oficial de la competencia.</p></div><section class="card" id="ficha-asociacion" style="margin:18px 0;text-align:center"><h2>🏆 Nuestra Asociación</h2><div id="asociacion-logo" style="margin:16px auto;min-height:130px;display:flex;align-items:center;justify-content:center"><span style="font-size:76px" aria-label="Escudo pendiente">⚽</span></div><h2 id="asociacion-nombre">Asociación de Fútbol Nueva Calera de Tango</h2><div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;text-align:left;margin:16px auto;max-width:780px"><p><strong>Fecha de fundación</strong><span style="display:block" id="asociacion-fundacion">19 de marzo de 2007</span></p><p><strong>Presidente</strong><span style="display:block" id="asociacion-presidente">Juan Canales</span></p><p><strong>Personalidad jurídica</strong><span style="display:block" id="asociacion-pj">Calera de Tango</span></p></div><div id="asociacion-edicion" hidden style="max-width:480px;margin:16px auto;text-align:left"><h3>Editar datos de la Asociación</h3><form id="asociacion-form"><label>Nombre oficial<input name="nombre" required maxlength="180"></label><label>Fecha de fundación<input name="fundacion" required maxlength="100"></label><label>Presidente<input name="presidente" required maxlength="120"></label><label>Personalidad jurídica<input name="pj" required maxlength="120"></label><button type="submit">Guardar información</button></form><label style="display:block;margin-top:12px">Subir o cambiar escudo de la Asociación<input id="asociacion-imagen" type="file" accept="image/png,image/jpeg,image/webp" style="display:block;max-width:100%"></label><p id="asociacion-estado" role="status"></p></div></section><section class="card"><h2>⚽ Nuestros 20 clubes</h2><p class="muted">Instituciones afiliadas, presentadas en orden alfabético.</p><div class="club-grid"><div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Antonio Román</strong></div>
 <div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Aromos de Chena</strong></div>
 <div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Defensor Los Sauces</strong></div>
 <div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Estrella de Caracas</strong></div>
@@ -173,8 +173,27 @@ clubTiles.forEach(tile=>{
  tile.addEventListener('click',e=>{if(e.target.closest('.club-detail'))return;open();});
  tile.addEventListener('keydown',e=>{if(e.target!==tile)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
 });
-onAuthStateChanged(auth,u=>{clubProfileUser=u;clubTiles.forEach(renderClubProfile);});
+onAuthStateChanged(auth,u=>{clubProfileUser=u;clubTiles.forEach(renderClubProfile);renderAssociation();});
 onSnapshot(collection(db,'fichas_clubes'),snapshot=>{snapshot.forEach(d=>{clubInformation[d.id]=d.data();});clubTiles.forEach(renderClubProfile);},e=>{console.warn('No se pudieron consultar fichas_clubes:',e.code);});
+
+// Ficha institucional central, editable exclusivamente por Tesorería.
+const associationDefaults={nombre:'Asociación de Fútbol Nueva Calera de Tango',fundacion:'19 de marzo de 2007',presidente:'Juan Canales',pj:'Calera de Tango'};
+let associationData={...associationDefaults};
+const associationForm=document.getElementById('asociacion-form'),associationStatus=document.getElementById('asociacion-estado');
+function renderAssociation(){
+ for(const key of ['nombre','fundacion','presidente','pj']){
+  document.getElementById('asociacion-'+key).textContent=associationData[key]||associationDefaults[key];
+  associationForm.elements.namedItem(key).value=associationData[key]||associationDefaults[key];
+ }
+ const logo=document.getElementById('asociacion-logo');logo.replaceChildren();
+ if(associationData.escudo&&/^data:image\/(jpeg|png|webp);base64,/.test(associationData.escudo)){const img=document.createElement('img');img.src=associationData.escudo;img.alt='Escudo de la Asociación Nueva Calera de Tango';img.style.cssText='max-width:240px;max-height:240px;object-fit:contain';logo.append(img);}
+ else{const placeholder=document.createElement('span');placeholder.textContent='⚽';placeholder.style.fontSize='76px';logo.append(placeholder);}
+ document.getElementById('asociacion-edicion').hidden=!clubCanEdit();
+}
+associationForm.addEventListener('submit',async e=>{e.preventDefault();if(!clubCanEdit())return;const data=Object.fromEntries(['nombre','fundacion','presidente','pj'].map(k=>[k,associationForm.elements.namedItem(k).value.trim()]));associationStatus.textContent='Guardando...';try{await setDoc(doc(db,'fichas_clubes','ASOCIACION'),data,{merge:true});associationData={...associationData,...data};renderAssociation();associationStatus.textContent='Información guardada.';}catch(err){associationStatus.textContent='Error al guardar: '+(err.code||err.message);}});
+document.getElementById('asociacion-imagen').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file||!clubCanEdit())return;associationStatus.textContent='Guardando escudo...';try{const escudo=await compressClubImage(file);await setDoc(doc(db,'fichas_clubes','ASOCIACION'),{escudo},{merge:true});associationData.escudo=escudo;renderAssociation();associationStatus.textContent='Escudo guardado correctamente.';}catch(err){associationStatus.textContent='Error al guardar: '+(err.code||err.message);}finally{e.target.value='';}});
+onSnapshot(doc(db,'fichas_clubes','ASOCIACION'),snap=>{associationData={...associationDefaults,...(snap.exists()?snap.data():{})};renderAssociation();},err=>{console.warn('Ficha de Asociación:',err.code);});
+
 const initialView=location.hash.slice(1);
 showView(document.getElementById(initialView)?.classList.contains('view-section')?initialView:'inicio');
 window.addEventListener('hashchange',()=>{const view=location.hash.slice(1);if(document.getElementById(view)?.classList.contains('view-section'))showView(view)});
