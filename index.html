@@ -26,7 +26,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 .home-hero{background:linear-gradient(120deg,#102a43,#16624b);color:#fff;border-radius:16px;padding:30px 24px;text-align:center;margin-bottom:20px}.home-hero h2{color:white;font-size:clamp(22px,3vw,30px)}.home-hero p{color:#e1f0ea}.club-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:14px}.club-tile{border:1px solid #dce4ea;border-radius:13px;background:#fff;padding:14px 8px;text-align:center;min-height:175px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}.club-tile img{width:100px;height:100px;object-fit:contain}.club-tile strong{font-size:13px;line-height:1.3}.club-tile .club-fallback{display:none;font-size:55px;color:#1769aa}.club-tile.no-image img{display:none}.club-tile.no-image .club-fallback{display:block}.home-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-top:14px}.home-links a{display:block;background:#eaf3fa;color:#123b5c;text-decoration:none;border-radius:10px;padding:14px;text-align:center;font-weight:bold}.home-links a:hover{background:#d5e9f7}
 .club-tile{cursor:pointer}.club-tile:focus-visible{outline:3px solid #1769aa;outline-offset:3px}.club-profile{margin-top:18px;padding:20px;border:1px solid #b6d3e6;border-radius:12px;background:#f2f8fc}.club-profile[hidden]{display:none!important}.club-profile h3{margin:0 0 12px;color:#102a43}.club-profile dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:0}.club-profile dl div{padding:12px;background:white;border-radius:8px}.club-profile dt{font-size:13px;font-weight:bold;color:#49677d}.club-profile dd{margin:5px 0 0}.club-profile-close{float:right;font-size:13px;padding:7px 10px}
 .club-tile:has(.club-detail:not([hidden])){grid-column:span 2;align-items:stretch;text-align:left}.club-detail{width:100%;padding:10px 4px;border-top:1px solid #dce4ea;cursor:default}.club-detail[hidden]{display:none}.club-detail dl{margin:0;display:grid;gap:8px}.club-detail dt{font-size:12px;color:#49677d;font-weight:bold}.club-detail dd{margin:0;font-size:14px}.club-edit-form{display:grid;gap:8px}.club-edit-form label{font-size:13px;font-weight:bold}.club-edit-form input{display:block;width:100%;padding:8px;border:1px solid #c5d4e0;border-radius:6px}.club-edit,.club-edit-form button{padding:8px;border:1px solid #8aafca;border-radius:7px;background:#eaf3fa;cursor:pointer}@media(max-width:500px){.club-tile:has(.club-detail:not([hidden])){grid-column:span 1}}
-</style>
+.finales-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.finales-card{padding:16px;border:1px solid #dce4ea;border-radius:12px;background:white;text-align:center}.finales-card h3{margin:0 0 12px}.finales-card img{display:block;width:100%;height:220px;object-fit:contain;background:#f4f7fa;border-radius:8px}.finales-card .finales-empty{display:grid;place-items:center;height:170px;background:#f4f7fa;border-radius:8px;color:#607588}.finales-card input{width:100%;margin-top:12px;font-size:12px}.finales-card .finales-msg{font-size:12px;margin-top:7px}</style>
 </head>
 <body>
 <header><div class="wrap">
@@ -37,6 +37,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
  <aside class="side-menu" aria-label="Menú de consultas">
  <h2>🔎 ¿Qué deseas ver?</h2>
  <button type="button" data-view="inicio" class="active">🏠 Inicio · 20 clubes</button>
+ <button type="button" data-view="finales">🏆 Finales</button>
  <button type="button" data-view="fixture">📅 Fixture</button>
  <button type="button" data-view="posiciones">🏆 Tabla de posiciones</button>
  <button type="button" data-view="multas">💳 Pagos y devoluciones</button>
@@ -71,7 +72,8 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
   <span class="pill">Clausura 2026</span>
  </div>
  <div class="grid">
-  <section class="card full view-section" id="fixture" hidden><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div id="fixture-content" class="empty">Cargando fixture Clausura 2026…</div></section>
+  <section class="card full view-section" id="finales" hidden><h2>🏆 Finales de la Asociación</h2><p class="muted">Fotografías oficiales de las finales por serie. Selecciona una categoría para ver su imagen.</p><div id="finales-grid" class="finales-grid"></div><p id="finales-estado" role="status" class="muted"></p></section>
+<section class="card full view-section" id="fixture" hidden><h2>📅 Fixture y programación</h2><p class="muted">Consulta la programación de partidos de la temporada y categoría seleccionadas.</p><div id="fixture-content" class="empty">Cargando fixture Clausura 2026…</div></section>
   <section class="card full view-section" id="admin" hidden><h2>🔐 Administración</h2><div id="login-box"><p>Solo la tesorería puede modificar los resultados oficiales.</p><label for="admin-email">Correo administrador</label><input id="admin-email" type="email" autocomplete="username" value="tesoreria.nct@gmail.com" readonly style="width:100%"><label for="admin-password">Contraseña</label><input id="admin-password" type="password" autocomplete="current-password" style="width:100%"><button id="login-button" type="button">Ingresar</button></div><div id="admin-panel" hidden><p id="admin-user"></p><button id="verify-button" type="button" hidden>Enviar correo de verificación</button><button id="logout-button" type="button">Cerrar sesión</button><p>Selecciona la fecha. Aquí aparecen juntos el Grupo A y el Grupo B para ingresar los goles y las bonificaciones. Las casillas vacías quedan pendientes.</p><div id="editor"></div><button id="save-results" type="button">Guardar resultados oficiales</button> <button id="save-pending" type="button" style="background:#526a7e;margin-top:8px">Guardar fecha sin resultados</button></div><p id="save-status" class="muted" role="status"></p></section>
   <section class="card full view-section" id="posiciones"><h2>🏆 Tabla de posiciones</h2><button type="button" id="descargar-tablas-2-hojas" style="margin:0 0 12px;background:#1769aa">📄 Abrir descarga de tablas (PDF · 2 hojas)</button><div class="notice" id="points-rule">Primera Adulta: 4 puntos por triunfo, 2 por empate y 0 por derrota.</div><div id="standings" class="empty">Cargando tablas de posiciones…</div></section>
   <section class="card full view-section" id="goleadores" hidden>
@@ -196,6 +198,29 @@ associationForm.addEventListener('submit',async e=>{e.preventDefault();if(!clubC
 document.getElementById('asociacion-imagen').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file||!clubCanEdit())return;associationStatus.textContent='Guardando escudo...';try{const escudo=await compressClubImage(file);await setDoc(doc(db,'fichas_clubes','ASOCIACION'),{escudo},{merge:true});associationData.escudo=escudo;renderAssociation();associationStatus.textContent='Escudo guardado correctamente.';}catch(err){associationStatus.textContent='Error al guardar: '+(err.code||err.message);}finally{e.target.value='';}});
 onSnapshot(doc(db,'fichas_clubes','ASOCIACION'),snap=>{associationData={...associationDefaults,...(snap.exists()?snap.data():{})};renderAssociation();},err=>{console.warn('Ficha de Asociación:',err.code);});
 
+
+// Galería pública de finales; subida reservada a Tesorería.
+const finalesSeries=['Tercera adulta','Senior','Juvenil','Femenino','Súper Senior','Primera adulta','Segunda adulta','Dorados','3ra infantil','2da infantil'];
+const finalesData={};
+function renderFinales(){
+ const grid=document.getElementById('finales-grid');grid.replaceChildren();
+ finalesSeries.forEach((serie,i)=>{
+  const card=document.createElement('article');card.className='finales-card';
+  const h=document.createElement('h3');h.textContent=serie;card.append(h);
+  const record=finalesData[String(i)]||{};
+  if(record.foto&&/^data:image\/(jpeg|png|webp);base64,/.test(record.foto)){const img=document.createElement('img');img.src=record.foto;img.alt='Fotografía de la final de '+serie;card.append(img);}
+  else{const empty=document.createElement('div');empty.className='finales-empty';empty.textContent='📷 Fotografía por publicar';card.append(empty);}
+  if(clubCanEdit()){
+   const label=document.createElement('label');label.textContent='Subir o reemplazar fotografía';
+   const input=document.createElement('input');input.type='file';input.accept='image/png,image/jpeg,image/webp';label.append(input);card.append(label);
+   const msg=document.createElement('p');msg.className='finales-msg';msg.setAttribute('role','status');card.append(msg);
+   input.addEventListener('change',async()=>{const file=input.files?.[0];if(!file)return;if(!clubCanEdit()){msg.textContent='Solo Tesorería puede modificar.';return;}input.disabled=true;msg.textContent='Guardando fotografía...';try{const foto=await compressClubImage(file);await setDoc(doc(db,'finales_fotos',String(i)),{serie,foto},{merge:true});finalesData[String(i)]={serie,foto};renderFinales();}catch(err){msg.textContent='No se pudo guardar: '+(err.code||err.message||'error');input.disabled=false;}});
+  }
+  grid.append(card);
+ });
+}
+onAuthStateChanged(auth,()=>renderFinales());
+onSnapshot(collection(db,'finales_fotos'),snapshot=>{snapshot.forEach(d=>finalesData[d.id]=d.data());renderFinales();},err=>{document.getElementById('finales-estado').textContent='Las fotografías requieren permisos de lectura en Firestore ('+(err.code||'error')+').';});
 const initialView=location.hash.slice(1);
 showView(document.getElementById(initialView)?.classList.contains('view-section')?initialView:'inicio');
 window.addEventListener('hashchange',()=>{const view=location.hash.slice(1);if(document.getElementById(view)?.classList.contains('view-section'))showView(view)});
