@@ -25,6 +25,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 /* Portada institucional: clubes en orden alfabético */
 .home-hero{background:linear-gradient(120deg,#102a43,#16624b);color:#fff;border-radius:16px;padding:30px 24px;text-align:center;margin-bottom:20px}.home-hero h2{color:white;font-size:clamp(22px,3vw,30px)}.home-hero p{color:#e1f0ea}.club-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:14px}.club-tile{border:1px solid #dce4ea;border-radius:13px;background:#fff;padding:14px 8px;text-align:center;min-height:175px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}.club-tile img{width:100px;height:100px;object-fit:contain}.club-tile strong{font-size:13px;line-height:1.3}.club-tile .club-fallback{display:none;font-size:55px;color:#1769aa}.club-tile.no-image img{display:none}.club-tile.no-image .club-fallback{display:block}.home-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-top:14px}.home-links a{display:block;background:#eaf3fa;color:#123b5c;text-decoration:none;border-radius:10px;padding:14px;text-align:center;font-weight:bold}.home-links a:hover{background:#d5e9f7}
 .club-tile{cursor:pointer}.club-tile:focus-visible{outline:3px solid #1769aa;outline-offset:3px}.club-profile{margin-top:18px;padding:20px;border:1px solid #b6d3e6;border-radius:12px;background:#f2f8fc}.club-profile[hidden]{display:none!important}.club-profile h3{margin:0 0 12px;color:#102a43}.club-profile dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:0}.club-profile dl div{padding:12px;background:white;border-radius:8px}.club-profile dt{font-size:13px;font-weight:bold;color:#49677d}.club-profile dd{margin:5px 0 0}.club-profile-close{float:right;font-size:13px;padding:7px 10px}
+.club-tile:has(.club-detail:not([hidden])){grid-column:span 2;align-items:stretch;text-align:left}.club-detail{width:100%;padding:10px 4px;border-top:1px solid #dce4ea;cursor:default}.club-detail[hidden]{display:none}.club-detail dl{margin:0;display:grid;gap:8px}.club-detail dt{font-size:12px;color:#49677d;font-weight:bold}.club-detail dd{margin:0;font-size:14px}.club-edit-form{display:grid;gap:8px}.club-edit-form label{font-size:13px;font-weight:bold}.club-edit-form input{display:block;width:100%;padding:8px;border:1px solid #c5d4e0;border-radius:6px}.club-edit,.club-edit-form button{padding:8px;border:1px solid #8aafca;border-radius:7px;background:#eaf3fa;cursor:pointer}@media(max-width:500px){.club-tile:has(.club-detail:not([hidden])){grid-column:span 1}}
 </style>
 </head>
 <body>
@@ -63,7 +64,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 <div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Santa Inés</strong></div>
 <div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Tricolor de Chena</strong></div>
 <div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Unión Lo Herrera</strong></div>
-<div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Unión Municipal</strong></div></div><div id="club-profile" class="club-profile" hidden aria-live="polite"><button type="button" id="close-club-profile" class="club-profile-close">Cerrar ficha ✕</button><h3 id="club-profile-name"></h3><dl><div><dt>Fecha de fundación</dt><dd>Por completar</dd></div><div><dt>Presidente actual</dt><dd>Por completar</dd></div><div><dt>Cancha de local</dt><dd>Por completar</dd></div><div><dt>Comuna</dt><dd>Por completar</dd></div></dl></div></section></section>
+<div class="club-tile no-image"><span class="club-fallback" aria-hidden="true">⚽</span><strong>Unión Municipal</strong></div></div></section></section>
  <div class="toolbar" id="filters-toolbar">
   <div class="field"><label for="season">TEMPORADA</label><select id="season"><option>2026</option><option>2027</option></select></div>
   <div class="field"><label for="round">FECHA</label><select id="round"></select></div><div class="field"><label for="category">CATEGORÍA · BUSCAR</label><select id="category"><option value="todas">Todas las tablas</option><option value="general">Tabla general</option><option>Dorados</option><option>Súper Senior</option><option>Senior</option><option>Tercera Infantil</option><option>Femenino</option><option>Segunda Infantil</option><option>Juvenil</option><option>Tercera Adulta</option><option>Segunda Adulta</option><option>Primera Adulta</option></select></div>
@@ -114,18 +115,44 @@ function showView(view){
 }
 document.querySelectorAll('.side-menu button').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
 
-// Fichas institucionales de los 20 clubes (datos pendientes de confirmación).
-const clubProfile=document.getElementById('club-profile');
-const clubProfileName=document.getElementById('club-profile-name');
+// Fichas desplegables y editables por tesorería.
 const clubInformation={'Antonio Román':{nombre:'Club Deportivo Antonio Román',fundacion:'12-12-1982',presidente:'David Ramírez',cancha:'Estadio Los Bajos',comuna:'San Bernardo'}};
-const clubProfileFields=clubProfile.querySelectorAll('dd');
-document.querySelectorAll('#inicio .club-tile').forEach(tile=>{
- tile.setAttribute('role','button');tile.setAttribute('tabindex','0');tile.setAttribute('aria-label','Ver información del club '+tile.querySelector('strong').textContent);
- const open=()=>{const club=tile.querySelector('strong').textContent;const info=clubInformation[club];clubProfileName.textContent=info?.nombre||club;[info?.fundacion,info?.presidente,info?.cancha,info?.comuna].forEach((value,i)=>{clubProfileFields[i].textContent=value||'Por completar';});clubProfile.hidden=false;clubProfile.scrollIntoView({behavior:'smooth',block:'nearest'});};
- tile.addEventListener('click',open);
- tile.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+const clubFields=[['nombre','Nombre oficial'],['fundacion','Fecha de fundación'],['presidente','Presidente actual'],['cancha','Cancha de local'],['comuna','Comuna']];
+const clubTiles=[...document.querySelectorAll('#inicio .club-tile')];
+let clubProfileUser=null;
+const clubCanEdit=()=>!!(clubProfileUser&&clubProfileUser.email===adminEmail&&clubProfileUser.emailVerified);
+function renderClubProfile(tile){
+ const detail=tile.querySelector('.club-detail');if(!detail||detail.hidden)return;
+ const club=tile.querySelector('strong').textContent,info=clubInformation[club]||{};
+ detail.replaceChildren();
+ const dl=document.createElement('dl');
+ for(const [key,label] of clubFields){const div=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=info[key]||'Por completar';div.append(dt,dd);dl.append(div);}
+ detail.append(dl);
+ if(clubCanEdit()){
+  const edit=document.createElement('button');edit.type='button';edit.textContent='✏️ Editar información';edit.className='club-edit';
+  edit.addEventListener('click',e=>{e.stopPropagation();detail.replaceChildren();const form=document.createElement('form');form.className='club-edit-form';const inputs={};
+   for(const [key,label] of clubFields){const lab=document.createElement('label');lab.textContent=label;const input=document.createElement('input');input.value=info[key]||'';input.required=key==='nombre';input.maxLength=180;inputs[key]=input;lab.append(input);form.append(lab);}
+   const save=document.createElement('button');save.type='submit';save.textContent='Guardar cambios';
+   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancelar';cancel.addEventListener('click',()=>renderClubProfile(tile));
+   const msg=document.createElement('p');msg.setAttribute('role','status');form.append(save,cancel,msg);
+   form.addEventListener('submit',async ev=>{ev.preventDefault();if(!clubCanEdit()){msg.textContent='Debes iniciar sesión como tesorería.';return;}save.disabled=true;msg.textContent='Guardando...';
+    const data=Object.fromEntries(clubFields.map(([key])=>[key,inputs[key].value.trim()]));
+    try{await setDoc(doc(db,'fichas_clubes',club),data);clubInformation[club]=data;renderClubProfile(tile);}
+    catch(err){msg.textContent='No se pudo guardar ('+(err.code||'error')+'). Revisa los permisos de Firestore.';save.disabled=false;}
+   });detail.append(form);
+  });detail.append(edit);
+ }
+}
+clubTiles.forEach(tile=>{
+ const club=tile.querySelector('strong').textContent;
+ tile.setAttribute('role','button');tile.setAttribute('tabindex','0');tile.setAttribute('aria-expanded','false');tile.setAttribute('aria-label','Ver información del club '+club);
+ const detail=document.createElement('div');detail.className='club-detail';detail.hidden=true;tile.append(detail);
+ const open=()=>{const show=detail.hidden;clubTiles.forEach(t=>{t.querySelector('.club-detail').hidden=true;t.setAttribute('aria-expanded','false');});detail.hidden=!show;tile.setAttribute('aria-expanded',String(show));if(show)renderClubProfile(tile);};
+ tile.addEventListener('click',e=>{if(e.target.closest('.club-detail'))return;open();});
+ tile.addEventListener('keydown',e=>{if(e.target!==tile)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
 });
-document.getElementById('close-club-profile').addEventListener('click',()=>{clubProfile.hidden=true;});
+onAuthStateChanged(auth,u=>{clubProfileUser=u;clubTiles.forEach(renderClubProfile);});
+onSnapshot(collection(db,'fichas_clubes'),snapshot=>{snapshot.forEach(d=>{clubInformation[d.id]=d.data();});clubTiles.forEach(renderClubProfile);},e=>{console.warn('No se pudieron consultar fichas_clubes:',e.code);});
 const initialView=location.hash.slice(1);
 showView(document.getElementById(initialView)?.classList.contains('view-section')?initialView:'inicio');
 window.addEventListener('hashchange',()=>{const view=location.hash.slice(1);if(document.getElementById(view)?.classList.contains('view-section'))showView(view)});
