@@ -117,9 +117,11 @@ document.querySelectorAll('.side-menu button').forEach(btn=>btn.addEventListener
 // Fichas institucionales de los 20 clubes (datos pendientes de confirmación).
 const clubProfile=document.getElementById('club-profile');
 const clubProfileName=document.getElementById('club-profile-name');
+const clubInformation={'Antonio Román':{nombre:'Club Deportivo Antonio Román',fundacion:'12-12-1982',presidente:'David Ramírez',cancha:'Estadio Los Bajos',comuna:'San Bernardo'}};
+const clubProfileFields=clubProfile.querySelectorAll('dd');
 document.querySelectorAll('#inicio .club-tile').forEach(tile=>{
  tile.setAttribute('role','button');tile.setAttribute('tabindex','0');tile.setAttribute('aria-label','Ver información del club '+tile.querySelector('strong').textContent);
- const open=()=>{clubProfileName.textContent=tile.querySelector('strong').textContent;clubProfile.hidden=false;clubProfile.scrollIntoView({behavior:'smooth',block:'nearest'});};
+ const open=()=>{const club=tile.querySelector('strong').textContent;const info=clubInformation[club];clubProfileName.textContent=info?.nombre||club;[info?.fundacion,info?.presidente,info?.cancha,info?.comuna].forEach((value,i)=>{clubProfileFields[i].textContent=value||'Por completar';});clubProfile.hidden=false;clubProfile.scrollIntoView({behavior:'smooth',block:'nearest'});};
  tile.addEventListener('click',open);
  tile.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
 });
