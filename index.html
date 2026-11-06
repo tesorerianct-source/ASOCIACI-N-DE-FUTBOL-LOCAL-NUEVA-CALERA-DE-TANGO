@@ -519,9 +519,9 @@ function renderMultas(){
      const destino=correo.trim();
      if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(destino)){$('multas-estado').textContent='Ingresa un correo válido.';return}
      const asunto='Comprobante de pago N.º '+String(m.folio).padStart(4,'0')+' - '+m.club;
-     const cuerpo='Estimados dirigentes de '+m.club+':\\n\\nJunto con saludar, informamos que se ha registrado el pago correspondiente a:\\nConcepto: '+(m.concepto||'Multas')+'\\nDetalle: '+m.detalle+'\\nMonto pagado: '+formatoCLP(m.abonado)+'\\nFecha de pago: '+m.fechaPago+'\\nFolio: '+String(m.folio).padStart(4,'0')+'\\n\\nSe adjunta el comprobante de pago.\\n\\nSaludos cordiales,\\nTesorería - Asociación Nueva Calera de Tango';
-     $('multas-estado').textContent='Se abrirá tu aplicación de correo. Adjunta manualmente el comprobante descargado y presiona Enviar. El sistema no lo envía automáticamente.';
-     window.location.href='mailto:'+encodeURIComponent(destino)+'?subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo);
+     const cuerpo='Estimados dirigentes de '+m.club+':\\n\\nJunto con saludar, informamos que se ha registrado el pago correspondiente a:\\nConcepto: '+(m.concepto||'Multas')+'\\nDetalle: '+m.detalle+'\\nMonto pagado: '+formatoCLP(m.abonado)+'\\nFecha de pago: '+m.fechaPago+'\\nFolio: '+String(m.folio).padStart(4,'0')+'\\n\\nAdjuntamos el comprobante de pago correspondiente.\\n\\nSaludos cordiales,\\nTesorería - Asociación Nueva Calera de Tango';
+     $('multas-estado').textContent='Se abrirá tu aplicación de correo con copia a tesoreria.nct@gmail.com. Adjunta manualmente el comprobante descargado y presiona Enviar. El sistema no lo envía automáticamente.';
+     window.location.href='mailto:'+encodeURIComponent(destino)+'?cc='+encodeURIComponent('tesoreria.nct@gmail.com')+'&subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo);
     });
     actions.append(enviar);
    }
