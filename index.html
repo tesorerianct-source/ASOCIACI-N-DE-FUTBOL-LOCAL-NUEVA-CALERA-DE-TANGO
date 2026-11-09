@@ -512,16 +512,50 @@ function renderMultas(){
    if(isAdmin()){
     const enviar=document.createElement('button');enviar.type='button';enviar.textContent='✉️ Enviar comprobante por correo';
     enviar.style.cssText='padding:6px 10px;margin:3px;background:#175ca0';
-    enviar.addEventListener('click',()=>{
-     if(!m.folio||!m.fechaPago){$('multas-estado').textContent='Primero presiona Emitir comprobante para asignar folio y generar el documento.';return}
+    enviar.addEventListener('click',async()=>{
+     if(!isAdmin()||!auth.currentUser){$('multas-estado').textContent='Inicia sesión como Tesorería para enviar comprobantes.';return}
+     if(!m.folio||!m.fechaPago){$('multas-estado').textContent='Primero presiona Emitir comprobante para asignar folio.';return}
      const correo=prompt('Correo electrónico del club '+m.club+' (verifica el destinatario antes de enviar):','');
      if(correo===null)return;
      const destino=correo.trim();
      if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(destino)){$('multas-estado').textContent='Ingresa un correo válido.';return}
-     const asunto='Comprobante de pago N.º '+String(m.folio).padStart(4,'0')+' - '+m.club;
-     const cuerpo='Estimados dirigentes de '+m.club+':\\n\\nJunto con saludar, informamos que se ha registrado el pago correspondiente a:\\nConcepto: '+(m.concepto||'Multas')+'\\nDetalle: '+m.detalle+'\\nMonto pagado: '+formatoCLP(m.abonado)+'\\nFecha de pago: '+m.fechaPago+'\\nFolio: '+String(m.folio).padStart(4,'0')+'\\n\\nAdjuntamos el comprobante de pago correspondiente.\\n\\nSaludos cordiales,\\nTesorería - Asociación Nueva Calera de Tango';
-     $('multas-estado').textContent='Se abrirá tu aplicación de correo con copia a tesoreria.nct@gmail.com. Adjunta manualmente el comprobante descargado y presiona Enviar. El sistema no lo envía automáticamente.';
-     window.location.href='mailto:'+encodeURIComponent(destino)+'?cc='+encodeURIComponent('tesoreria.nct@gmail.com')+'&subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo);
+     if(!confirm('¿Enviar el comprobante N.º '+String(m.folio).padStart(4,'0')+' a '+destino+' con copia a Tesorería?'))return;
+     enviar.disabled=true;
+     $('multas-estado').textContent='Preparando PDF y enviando a '+destino+'…';
+     try{
+      if(!window.jspdf){
+       await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';script.onload=resolve;script.onerror=()=>reject(Error('No se pudo cargar el generador de PDF'));document.head.append(script)});
+      }
+      const pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4'});
+      const numero=String(m.folio).padStart(4,'0');
+      const normalizar=x=>String(x??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^\\x20-\\x7E]/g,' ');
+      const escribir=(etiqueta,valor,y)=>{const lineas=pdf.splitTextToSize(normalizar(etiqueta+': '+valor),175);pdf.text(lineas,18,y);return y+Math.max(9,lineas.length*7)};
+      pdf.setFont('helvetica','bold');pdf.setFontSize(16);pdf.text('ASOCIACION NUEVA CALERA DE TANGO',18,24);
+      pdf.setFontSize(14);pdf.text('COMPROBANTE DE INGRESO N. '+numero,18,37);
+      pdf.setDrawColor(40,70,100);pdf.line(18,42,192,42);
+      pdf.setFont('helvetica','normal');pdf.setFontSize(11);
+      let y=55;
+      y=escribir('Institucion',m.club,y);
+      y=escribir('Concepto',m.concepto||'Multas',y);
+      y=escribir('Detalle',m.detalle,y);
+      y=escribir('Monto',formatoCLP(m.monto),y);
+      y=escribir('Monto abonado',formatoCLP(m.abonado),y);
+      y=escribir('Fecha de pago',m.fechaPago,y);
+      pdf.setFontSize(9);pdf.text('Emitido por Tesoreria - Asociacion Nueva Calera de Tango',18,270);
+      const pdfBase64=pdf.output('datauristring').split(',')[1];
+      const token=await auth.currentUser.getIdToken();
+      const response=await fetch('https://comprobantes-nct.tesoreria-nct.workers.dev/',{
+       method:'POST',
+       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+       body:JSON.stringify({correoClub:destino,club:m.club,folio:m.folio,pdfBase64})
+      });
+      const resultado=await response.json().catch(()=>({}));
+      if(!response.ok||!resultado.ok)throw Error(resultado.detalle||resultado.error||'El servicio no confirmó el envío (HTTP '+response.status+')');
+      $('multas-estado').textContent='Comprobante N.º '+numero+' aceptado para envío a '+destino+' con copia a Tesorería. ID: '+(resultado.idEnvio||'no informado');
+     }catch(error){
+      console.error('Error enviando comprobante:',error);
+      $('multas-estado').textContent='No se pudo enviar el comprobante: '+(error.message||'Error desconocido')+'. No vuelvas a enviarlo sin comprobar antes si llegó.';
+     }finally{enviar.disabled=false}
     });
     actions.append(enviar);
    }
