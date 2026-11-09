@@ -513,12 +513,12 @@ function renderMultas(){
     const enviar=document.createElement('button');enviar.type='button';enviar.textContent='✉️ Enviar comprobante por correo';
     enviar.style.cssText='padding:6px 10px;margin:3px;background:#175ca0';
     enviar.addEventListener('click',async()=>{
-     if(!isAdmin()||!auth.currentUser){$('multas-estado').textContent='Inicia sesión como Tesorería para enviar comprobantes.';return}
-     if(!m.folio||!m.fechaPago){$('multas-estado').textContent='Primero presiona Emitir comprobante para asignar folio.';return}
+     if(!isAdmin()||!auth.currentUser){$('multas-estado').textContent='Inicia sesión como Tesorería para enviar comprobantes.';alert($('multas-estado').textContent);return}
+     if(!m.folio||!m.fechaPago){$('multas-estado').textContent='Primero presiona Emitir comprobante para asignar folio.';alert($('multas-estado').textContent);return}
      const correo=prompt('Correo electrónico del club '+m.club+' (verifica el destinatario antes de enviar):','');
      if(correo===null)return;
      const destino=correo.trim();
-     if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(destino)){$('multas-estado').textContent='Ingresa un correo válido.';return}
+     if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(destino)){$('multas-estado').textContent='Ingresa un correo válido.';alert($('multas-estado').textContent);return}
      if(!confirm('¿Enviar el comprobante N.º '+String(m.folio).padStart(4,'0')+' a '+destino+' con copia a Tesorería?'))return;
      enviar.disabled=true;
      $('multas-estado').textContent='Preparando PDF y enviando a '+destino+'…';
@@ -551,10 +551,10 @@ function renderMultas(){
       });
       const resultado=await response.json().catch(()=>({}));
       if(!response.ok||!resultado.ok)throw Error(resultado.detalle||resultado.error||'El servicio no confirmó el envío (HTTP '+response.status+')');
-      $('multas-estado').textContent='Comprobante N.º '+numero+' aceptado para envío a '+destino+' con copia a Tesorería. ID: '+(resultado.idEnvio||'no informado');
+      $('multas-estado').textContent='Comprobante N.º '+numero+' aceptado por el servicio de envío para '+destino+' con copia a Tesorería. ID: '+(resultado.idEnvio||'no informado')+'. Comprueba la entrega en Resend.';alert($('multas-estado').textContent);
      }catch(error){
       console.error('Error enviando comprobante:',error);
-      $('multas-estado').textContent='No se pudo enviar el comprobante: '+(error.message||'Error desconocido')+'. No vuelvas a enviarlo sin comprobar antes si llegó.';
+      $('multas-estado').textContent='No se pudo confirmar el envío del comprobante: '+(error.message||'Error desconocido')+'. Antes de reintentar, revisa Resend para evitar duplicados.';alert($('multas-estado').textContent);
      }finally{enviar.disabled=false}
     });
     actions.append(enviar);
