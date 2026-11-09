@@ -528,20 +528,44 @@ function renderMultas(){
       }
       const pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4'});
       const numero=String(m.folio).padStart(4,'0');
-      const normalizar=x=>String(x??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^\\x20-\\x7E]/g,' ');
-      const escribir=(etiqueta,valor,y)=>{const lineas=pdf.splitTextToSize(normalizar(etiqueta+': '+valor),175);pdf.text(lineas,18,y);return y+Math.max(9,lineas.length*7)};
-      pdf.setFont('helvetica','bold');pdf.setFontSize(16);pdf.text('ASOCIACION NUEVA CALERA DE TANGO',18,24);
-      pdf.setFontSize(14);pdf.text('COMPROBANTE DE INGRESO N. '+numero,18,37);
-      pdf.setDrawColor(40,70,100);pdf.line(18,42,192,42);
-      pdf.setFont('helvetica','normal');pdf.setFontSize(11);
-      let y=55;
-      y=escribir('Institucion',m.club,y);
-      y=escribir('Concepto',m.concepto||'Multas',y);
-      y=escribir('Detalle',m.detalle,y);
-      y=escribir('Monto',formatoCLP(m.monto),y);
-      y=escribir('Monto abonado',formatoCLP(m.abonado),y);
-      y=escribir('Fecha de pago',m.fechaPago,y);
-      pdf.setFontSize(9);pdf.text('Emitido por Tesoreria - Asociacion Nueva Calera de Tango',18,270);
+      const normalizar=x=>String(x??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,' ');
+      const fechaPago=String(m.fechaPago||'').split('-').reverse().join('/');
+      const dibujarCopia=(inicio,tipo)=>{
+       pdf.setFont('helvetica','bolditalic');pdf.setFontSize(16);pdf.setTextColor(10,36,78);
+       pdf.text('COMPROBANTE',105,inicio+9,{align:'center'});
+       pdf.setFont('helvetica','bold');pdf.setFontSize(10);pdf.text('N. '+numero,190,inicio+9,{align:'right'});
+       pdf.setDrawColor(30,50,75);pdf.roundedRect(18,inicio+15,145,21,3,3);
+       pdf.setFont('helvetica','bolditalic');pdf.setFontSize(11);
+       pdf.text('ASOCIACION NUEVA CALERA DE TANGO',90,inicio+21,{align:'center'});
+       pdf.text('INGRESO',90,inicio+27,{align:'center'});
+       pdf.setFont('helvetica','normal');pdf.setFontSize(8);
+       pdf.text('FECHA DE PAGO: '+fechaPago,90,inicio+32,{align:'center'});
+       const campos=[
+        ['Institucion',m.club],['Concepto',m.concepto||'Multas'],['Detalle',m.detalle],
+        ['Monto',formatoCLP(m.monto)],['Monto abonado',formatoCLP(m.abonado)],
+        ['Fecha de pago',fechaPago],['Estado','PAGADO EN SU TOTALIDAD']
+       ];
+       let y=inicio+49;
+       for(const [etiqueta,valor] of campos){
+        pdf.setFont('helvetica','bold');pdf.setFontSize(9);pdf.setTextColor(10,36,78);
+        pdf.text(normalizar(etiqueta)+':',18,y);
+        pdf.setFont('helvetica','normal');pdf.setTextColor(etiqueta==='Monto'?190:15,etiqueta==='Monto'?20:35,etiqueta==='Monto'?20:65);
+        const lineas=pdf.splitTextToSize(normalizar(valor),90);
+        pdf.text(lineas,65,y);y+=Math.max(8,lineas.length*5);
+       }
+       pdf.setTextColor(10,36,78);pdf.setDrawColor(35,50,70);
+       pdf.line(18,inicio+119,75,inicio+119);pdf.line(145,inicio+119,192,inicio+119);
+       pdf.setFont('helvetica','normal');pdf.setFontSize(7);
+       pdf.text('RECIBI CONFORME',46,inicio+123,{align:'center'});
+       pdf.text('PAGADOR',168,inicio+123,{align:'center'});
+       pdf.setFont('helvetica','bold');pdf.text('TESORERIA',105,inicio+119,{align:'center'});
+       pdf.setFontSize(6);pdf.text('ASOCIACION NUEVA CALERA DE TANGO',105,inicio+123,{align:'center'});
+       pdf.setFont('helvetica','normal');pdf.setFontSize(8);
+       pdf.text('COPIA '+tipo,18,inicio+130);
+      };
+      dibujarCopia(7,'ASOCIACION');
+      pdf.setLineDashPattern([1,1],0);pdf.line(15,146,195,146);pdf.setLineDashPattern([],0);
+      dibujarCopia(151,'CLUB');
       const pdfBase64=pdf.output('datauristring').split(',')[1];
       const token=await auth.currentUser.getIdToken();
       const response=await fetch('https://comprobantes-nct.tesoreria-nct.workers.dev/',{
