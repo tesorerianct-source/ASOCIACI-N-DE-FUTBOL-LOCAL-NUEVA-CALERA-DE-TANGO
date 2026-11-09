@@ -518,7 +518,7 @@ function renderMultas(){
      const correo=prompt('Correo electrónico del club '+m.club+' (verifica el destinatario antes de enviar):','');
      if(correo===null)return;
      const destino=correo.trim();
-     if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(destino)){$('multas-estado').textContent='Ingresa un correo válido.';alert($('multas-estado').textContent);return}
+     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destino)){$('multas-estado').textContent='Ingresa un correo válido.';alert($('multas-estado').textContent);return}
      if(!confirm('¿Enviar el comprobante N.º '+String(m.folio).padStart(4,'0')+' a '+destino+' con copia a Tesorería?'))return;
      enviar.disabled=true;
      $('multas-estado').textContent='Preparando PDF y enviando a '+destino+'…';
